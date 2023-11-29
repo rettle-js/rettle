@@ -1,5 +1,4 @@
 import path from "path";
-import { config } from "../utils/config";
 import glob from "glob";
 import fs from "fs";
 import {
@@ -17,6 +16,7 @@ import {
 import { deleteDir, copyStatic } from "../utils/directoryControl";
 import js_beautify from "js-beautify";
 import CleanCSS from "clean-css";
+import {createConfig, RettleConfigInterface} from "../utils/config";
 
 const resetDir = (dirRoot: string) => {
   return new Promise((resolve) => {
@@ -28,6 +28,7 @@ const resetDir = (dirRoot: string) => {
 };
 
 export const build = async () => {
+  const config = createConfig();
   await Promise.all([
     resetDir(config.outDir),
     resetDir(".cache/src"),
@@ -60,12 +61,19 @@ export const build = async () => {
     throw e;
   }
   try {
-    await createCacheAppFile();
+    await createCacheAppFile({
+      js: config.js,
+      endpoints: config.endpoints,
+      root: config.root,
+    });
   } catch (e) {
     throw e;
   }
   try {
-    await buildScript(buildSetupOptions);
+    await buildScript(buildSetupOptions, {
+      js: config.js,
+      define: config.define
+    });
   } catch (e) {
     throw e;
   }
@@ -98,7 +106,7 @@ export const build = async () => {
   }
 
   // Create HTML FILES
-  const entryPaths = getEntryPaths();
+  const entryPaths = getEntryPaths(config.root, config.endpoints);
   Object.keys(entryPaths).map(async (key) => {
     const items = entryPaths[key];
     let styles = ``;
@@ -122,13 +130,29 @@ export const build = async () => {
                 return new Promise(async (resolve) => {
                   const compileData = await transformReact2HTMLCSSDynamic(
                     item,
-                    id
+                    id,
+                    {
+                      define: config.define,
+                      esbuild: config.esbuild,
+                      beautify: config.beautify
+                    }
                   );
                   const { htmlOutputPath, code, style } = await compileHTML(
                     key,
                     item,
                     compileData,
-                    id
+                    {
+                      root: config.root,
+                      pathPrefix: config.pathPrefix,
+                      js: config.js,
+                      css: config.css,
+                      template: config.template,
+                      version: config.version,
+                      header: config.header,
+                      outDir: config.outDir,
+                      esbuild: config.esbuild,
+                      build: config.build
+                    }
                   );
                   styles = styles + style;
                   fs.writeFileSync(htmlOutputPath, code, "utf-8");
@@ -139,11 +163,27 @@ export const build = async () => {
             }
           }
         } else {
-          const compileData = await transformReact2HTMLCSS(item);
+          const compileData = await transformReact2HTMLCSS(item, {
+            esbuild: config.esbuild,
+            define: config.define,
+            beautify: config.beautify,
+          });
           const { htmlOutputPath, code, style } = await compileHTML(
             key,
             item,
-            compileData
+            compileData,
+            {
+              root: config.root,
+              pathPrefix: config.pathPrefix,
+              js: config.js,
+              css: config.css,
+              template: config.template,
+              version: config.version,
+              header: config.header,
+              outDir: config.outDir,
+              esbuild: config.esbuild,
+              build: config.build,
+            }
           );
           styles = styles + style;
           fs.writeFileSync(htmlOutputPath, code, "utf-8");
@@ -173,6 +213,10 @@ export const build = async () => {
     await mkdirp(cssOutputPath);
     fs.writeFileSync(cssOutputPath, resultCss, "utf-8");
   });
-  await copyStatic();
+  await copyStatic(
+    config.static,
+    config.outDir,
+    config.pathPrefix
+  );
   config.build.copyStatic!();
 };

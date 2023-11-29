@@ -6,18 +6,35 @@ import {
 } from "./HTMLBuilder";
 import { checkEndpoint } from "./utility";
 import path from "path";
-import { config } from "./config";
+import { RettleConfigInterface } from "./config";
 
-const compileTsx = (tsxPath: string): Promise<string> => {
+const compileTsx = (
+  tsxPath: string,
+  c: {
+    js: RettleConfigInterface<any>["js"];
+    template: RettleConfigInterface<any>["template"];
+    version: RettleConfigInterface<any>["version"];
+    header: RettleConfigInterface<any>["header"];
+    esbuild: RettleConfigInterface<any>["esbuild"];
+    define: RettleConfigInterface<any>["define"];
+    beautify: RettleConfigInterface<any>["beautify"];
+    endpoints: RettleConfigInterface<any>["endpoints"];
+    root: RettleConfigInterface<any>["root"];
+  }
+): Promise<string> => {
   return new Promise(async (resolve, reject) => {
     try {
-      const { html, css, ids } = await transformReact2HTMLCSS(tsxPath);
+      const { html, css, ids } = await transformReact2HTMLCSS(tsxPath, {
+        esbuild: c.esbuild,
+        define: c.define,
+        beautify: c.beautify,
+      });
       const style = `<style data-emotion="${ids.join(" ")}">${css}</style>`;
       const helmet = createHelmet();
-      const headers = createHeaders().concat(helmet.headers);
-      const endpoint = checkEndpoint(tsxPath);
-      const script = path.join("/.cache/scripts", endpoint || "", config.js);
-      const result = config.template({
+      const headers = createHeaders(c.version, c.header).concat(helmet.headers);
+      const endpoint = checkEndpoint(tsxPath, c.endpoints, c.root);
+      const script = path.join("/.cache/scripts", endpoint || "", c.js);
+      const result = c.template({
         html,
         style,
         headers,
@@ -33,19 +50,38 @@ const compileTsx = (tsxPath: string): Promise<string> => {
   });
 };
 
-const compileDynamicTsx = (tsxPath: string, id: string): Promise<string> => {
+const compileDynamicTsx = (
+  tsxPath: string,
+  id: string,
+  c: {
+    define: RettleConfigInterface<any>["define"];
+    esbuild: RettleConfigInterface<any>["esbuild"];
+    beautify: RettleConfigInterface<any>["beautify"];
+    version: RettleConfigInterface<any>["version"];
+    header: RettleConfigInterface<any>["header"];
+    endpoints: RettleConfigInterface<any>["endpoints"];
+    root: RettleConfigInterface<any>["root"];
+    js: RettleConfigInterface<any>["js"];
+    template: RettleConfigInterface<any>["template"];
+  }
+): Promise<string> => {
   return new Promise(async (resolve, reject) => {
     try {
       const { html, css, ids } = await transformReact2HTMLCSSDynamic(
         tsxPath,
-        id
+        id,
+        {
+          define: c.define,
+          esbuild: c.esbuild,
+          beautify: c.beautify,
+        }
       );
       const style = `<style data-emotion="${ids.join(" ")}">${css}</style>`;
       const helmet = createHelmet();
-      const headers = createHeaders().concat(helmet.headers);
-      const endpoint = checkEndpoint(tsxPath);
-      const script = path.join("/.cache/scripts", endpoint || "", config.js);
-      const result = config.template({
+      const headers = createHeaders(c.version, c.header).concat(helmet.headers);
+      const endpoint = checkEndpoint(tsxPath, c.endpoints, c.root);
+      const script = path.join("/.cache/scripts", endpoint || "", c.js);
+      const result = c.template({
         html,
         style,
         headers,

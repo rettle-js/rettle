@@ -1,6 +1,5 @@
 import path from "node:path";
-import * as glob from "glob";
-import { config } from "./config";
+import { RettleConfigInterface } from "./config";
 import { compileDynamicTsx } from "./viteCompileTsxFile";
 import * as fs from "node:fs";
 
@@ -10,16 +9,18 @@ type waitingConfig = {
   id: string;
 }[];
 
-const getWaitingPath = async () => {
+const getWaitingPath = async (c: {
+  dynamicRoutes: RettleConfigInterface<any>["dynamicRoutes"];
+}) => {
   const waitingData: waitingConfig = [];
   const pattern = /\[(.*?)\]/;
-  if (config.dynamicRoutes) {
-    type DynamicRoutesKey = keyof typeof config.dynamicRoutes;
+  if (c.dynamicRoutes) {
+    type DynamicRoutesKey = keyof typeof c.dynamicRoutes;
     for (const relativePath of Object.keys(
-      config.dynamicRoutes
+      c.dynamicRoutes
     ) as DynamicRoutesKey[]) {
-      const routeIsArray = Array.isArray(config.dynamicRoutes[relativePath]);
-      const routingSetting = config.dynamicRoutes[relativePath];
+      const routeIsArray = Array.isArray(c.dynamicRoutes[relativePath]);
+      const routingSetting = c.dynamicRoutes[relativePath];
       const requestData = routeIsArray
         ? (routingSetting as string[])
         : ((await (routingSetting as () => Promise<string[]>)()) as string[]);
@@ -49,10 +50,24 @@ const checkDynamicRoute = (requestHTML: string, config: waitingConfig) => {
   return false;
 };
 
-const viteDynamicRouting = async (tsxPath: string, id: string) => {
+const viteDynamicRouting = async (
+  tsxPath: string,
+  id: string,
+  c: {
+    define: RettleConfigInterface<any>["define"];
+    esbuild: RettleConfigInterface<any>["esbuild"];
+    beautify: RettleConfigInterface<any>["beautify"];
+    version: RettleConfigInterface<any>["version"];
+    header: RettleConfigInterface<any>["header"];
+    endpoints: RettleConfigInterface<any>["endpoints"];
+    root: RettleConfigInterface<any>["root"];
+    js: RettleConfigInterface<any>["js"];
+    template: RettleConfigInterface<any>["template"];
+  }
+) => {
   if (fs.existsSync(tsxPath)) {
     try {
-      const result = await compileDynamicTsx(tsxPath, id);
+      const result = await compileDynamicTsx(tsxPath, id, c);
       return await Promise.resolve(result);
     } catch (e) {
       return await Promise.reject(e);

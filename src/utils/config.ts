@@ -12,7 +12,9 @@ type DynamicRouteArray = string[];
 
 type DynamicRouteFunction = () => Promise<DynamicRouteArray>;
 
-type DynamicRoute = string[] | DynamicRouteFunction;
+export type DynamicRoute = {
+  [path: `./${string}`]: string[] | DynamicRouteFunction;
+};
 
 interface BuildOptionsInterface {
   copyStatic?: () => void;
@@ -25,13 +27,13 @@ interface esbuildInterface {
   plugins?: (mode: "server" | "client") => esBuild.Plugin[];
 }
 
-interface BeautifyOptions {
+export interface BeautifyOptions {
   css?: js_beautify.CSSBeautifyOptions | boolean;
   html?: js_beautify.HTMLBeautifyOptions | boolean;
   script?: js_beautify.JSBeautifyOptions | boolean;
 }
 
-export interface RettleConfigInterface {
+export interface RettleConfigInterface<T extends Record<string, string> = {}> {
   pathPrefix: string;
   css: string;
   js: string;
@@ -40,13 +42,13 @@ export interface RettleConfigInterface {
   endpoints: Array<string>;
   static: string;
   outDir: string;
-  define?: Record<string, string>;
+  define?: T;
   header?: {
     meta?: Record<string, string | number | boolean>[];
     link?: Record<string, string | number | boolean>[];
     script?: Record<string, string | number | boolean>[];
   };
-  dynamicRoutes?: { [path: `./${string}`]: string[] | DynamicRouteFunction };
+  dynamicRoutes?: DynamicRoute;
   template: (options: templateHTMLInterface) => string;
   build: BuildOptionsInterface;
   esbuild: esbuildInterface;
@@ -75,7 +77,7 @@ const sortStringsBySlashCount = (strings: Array<string>) => {
   return sorted;
 };
 
-const getConfigure = () => {
+export const createConfig = (): RettleConfigInterface => {
   const path = require("path");
   const fs = require("fs");
   const { extensions } = require("interpret");
@@ -103,19 +105,21 @@ const getConfigure = () => {
   return config;
 };
 
-export const getIgnores = (endpoint: string) => {
-  const ignores = config.endpoints.filter(
-    (x: string, i: number, self: string[]) => {
-      const rootEndpoint = path.join(config.root, self[i]);
-      return (
-        self[i] !== endpoint &&
-        !endpoint.includes(rootEndpoint.replace("/**/*", ""))
-      );
-    }
-  ) as string[];
+export const getIgnores = (
+  endpoint: string,
+  c: {
+    endpoints: RettleConfigInterface<any>["endpoints"];
+    root: RettleConfigInterface<any>["root"];
+  }
+) => {
+  const ignores = c.endpoints.filter((x: string, i: number, self: string[]) => {
+    const rootEndpoint = path.join(c.root, self[i]);
+    return (
+      self[i] !== endpoint &&
+      !endpoint.includes(rootEndpoint.replace("/**/*", ""))
+    );
+  }) as string[];
   return ignores.map((item) => {
     return item.includes("/**/*") ? item : path.join(item, "/**/*");
   });
 };
-
-export const config: RettleConfigInterface = getConfigure();

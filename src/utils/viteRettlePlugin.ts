@@ -1,5 +1,5 @@
 import path from "path";
-import { config } from "./config";
+import { RettleConfigInterface } from "./config";
 import fs from "fs";
 import { send, Plugin } from "vite";
 import errorTemplateHtml, { errorTemplate } from "./errorTemplate.html";
@@ -27,15 +27,30 @@ const errorResult = (e: any) => {
 
 let dynamicPaths: waitingConfig;
 
-export const viteRettlePlugin: Plugin = {
+export const viteRettlePlugin = (c: {
+  root: RettleConfigInterface<any>["root"];
+  static: RettleConfigInterface<any>["static"];
+  pathPrefix: RettleConfigInterface<any>["pathPrefix"];
+  dynamicRoutes: RettleConfigInterface<any>["dynamicRoutes"];
+  js: RettleConfigInterface<any>["js"];
+  template: RettleConfigInterface<any>["template"];
+  version: RettleConfigInterface<any>["version"];
+  header: RettleConfigInterface<any>["header"];
+  esbuild: RettleConfigInterface<any>["esbuild"];
+  define: RettleConfigInterface<any>["define"];
+  beautify: RettleConfigInterface<any>["beautify"];
+  endpoints: RettleConfigInterface<any>["endpoints"];
+}): Plugin => ({
   name: "vite-plugin-rettle",
   apply: "serve",
   async configureServer(server) {
-    dynamicPaths = await getWaitingPath();
+    dynamicPaths = await getWaitingPath({
+      dynamicRoutes: c.dynamicRoutes,
+    });
     server.middlewares.use(async (req, res, next) => {
       const root = server.config.root;
-      let fullReqPath = path.join(root, config.root, req.url || "");
-      let fullReqStaticPath = path.join(root, config.static, req.url || "");
+      let fullReqPath = path.join(root, c.root, req.url || "");
+      let fullReqStaticPath = path.join(root, c.static, req.url || "");
       if (fullReqPath.endsWith("/")) {
         fullReqPath += "index.html";
       }
@@ -43,16 +58,26 @@ export const viteRettlePlugin: Plugin = {
         fullReqStaticPath += "index.html";
       }
       const fullReqPathWithoutPrefix = path.join(
-        ...fullReqPath.split(config.pathPrefix)
+        ...fullReqPath.split(c.pathPrefix)
       );
       if (fullReqPath.endsWith(".html")) {
         const tsxPath = `${
           fullReqPath.slice(0, Math.max(0, fullReqPath.lastIndexOf("."))) ||
           fullReqPath
-        }.tsx`.replace(path.join(config.root, config.pathPrefix), config.root);
+        }.tsx`.replace(path.join(c.root, c.pathPrefix), c.root);
         if (fs.existsSync(tsxPath)) {
           try {
-            const result = await compileTsx(tsxPath);
+            const result = await compileTsx(tsxPath, {
+              js: c.js,
+              template: c.template,
+              version: c.version,
+              header: c.header,
+              esbuild: c.esbuild,
+              define: c.define,
+              beautify: c.beautify,
+              endpoints: c.endpoints,
+              root: c.root,
+            });
             return send(req, res, result, "html", {});
           } catch (e: any) {
             const result = errorResult(e);
@@ -67,7 +92,18 @@ export const viteRettlePlugin: Plugin = {
           try {
             const result = await viteDynamicRouting(
               dynamicPath.src,
-              dynamicPath.id
+              dynamicPath.id,
+              {
+                define: c.define,
+                esbuild: c.esbuild,
+                beautify: c.beautify,
+                version: c.version,
+                header: c.header,
+                endpoints: c.endpoints,
+                root: c.root,
+                js: c.js,
+                template: c.template,
+              }
             );
             return send(req, res, result, "html", {});
           } catch (e) {
@@ -88,4 +124,4 @@ export const viteRettlePlugin: Plugin = {
       }
     });
   },
-};
+});

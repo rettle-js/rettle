@@ -54,9 +54,7 @@ const config: RettleConfigInterface = {
     port: 3000,
     host: "0.0.0.0",
   },
-  define: {
-    NODE_ENV: process.env.NODE_ENV as string,
-  },
+  define: {},
   version: true,
 };
 

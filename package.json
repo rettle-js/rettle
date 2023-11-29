@@ -1,6 +1,6 @@
 {
   "name": "rettle",
-  "version": "0.0.8-beta3.4-hotfix4",
+  "version": "0.0.8-beta3.5",
   "main": "./bin/rettle.js",
   "bin": {
     "rettle": "./bin/index.js"
@@ -24,6 +24,16 @@
       "require": {
         "default": "./bin/rettle-core.js",
         "types": "./bin/rettle-core.d.ts"
+      }
+    },
+    "./vite": {
+      "import": {
+        "default": "./bin/vite.js",
+        "types": "./bin/vite.d.ts"
+      },
+      "require": {
+        "default": "./bin/vite.js",
+        "types": "./bin/vite.d.ts"
       }
     }
   },
