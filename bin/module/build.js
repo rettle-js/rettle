@@ -128,6 +128,7 @@ const build = () => __awaiter(void 0, void 0, void 0, function* () {
                                     esbuild: config.esbuild,
                                     build: config.build,
                                 }, {
+                                    dynamic: id,
                                     module: false,
                                 });
                                 styles = styles + style;

@@ -149,6 +149,7 @@ export const build = async () => {
                       build: config.build,
                     },
                     {
+                      dynamic: id,
                       module: false,
                     }
                   );
