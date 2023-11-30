@@ -113,10 +113,10 @@ const build = () => __awaiter(void 0, void 0, void 0, function* () {
                                     esbuild: config.esbuild,
                                     beautify: config.beautify,
                                 });
-                                const { htmlOutputPath, code, style } = yield (0, HTMLBuilder_1.compileHTML)(key, item, compileData, {
+                                const { htmlOutputPath, code, style } = yield (0, HTMLBuilder_1.compileHTML)(item, compileData, {
                                     js: path_1.default.join("/", config.root, config.pathPrefix),
                                     css: path_1.default.join("/", config.root, config.pathPrefix),
-                                }, {
+                                }, compileData.helmet, {
                                     root: config.root,
                                     pathPrefix: config.pathPrefix,
                                     js: config.js,
@@ -145,10 +145,10 @@ const build = () => __awaiter(void 0, void 0, void 0, function* () {
                     define: config.define,
                     beautify: config.beautify,
                 });
-                const { htmlOutputPath, code, style } = yield (0, HTMLBuilder_1.compileHTML)(key, item, compileData, {
+                const { htmlOutputPath, code, style } = yield (0, HTMLBuilder_1.compileHTML)(item, compileData, {
                     js: path_1.default.join("/", config.root, config.pathPrefix),
                     css: path_1.default.join("/", config.root, config.pathPrefix),
-                }, {
+                }, compileData.helmet, {
                     root: config.root,
                     pathPrefix: config.pathPrefix,
                     js: config.js,

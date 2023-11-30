@@ -36,8 +36,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.server = void 0;
-const watcher_1 = require("./watcher");
-const Log_1 = require("../utils/Log");
 const AppScriptBuilder_1 = require("../utils/AppScriptBuilder");
 const viteServer_1 = require("../utils/viteServer");
 const config_1 = require("../utils/config");
@@ -45,37 +43,7 @@ const path = __importStar(require("path"));
 const glob_1 = __importDefault(require("glob"));
 const fs_1 = __importDefault(require("fs"));
 const directoryControl_1 = require("../utils/directoryControl");
-const watchSources = (c) => {
-    (0, watcher_1.watchFiles)({
-        change: (filename) => __awaiter(void 0, void 0, void 0, function* () {
-            try {
-                console.log(Log_1.color.blue(`【Change File】-> ${filename}`));
-                yield (0, AppScriptBuilder_1.outputFormatFiles)(filename);
-                yield (0, AppScriptBuilder_1.createCacheAppFile)({
-                    js: c.js,
-                    endpoints: c.endpoints,
-                    root: c.root,
-                });
-            }
-            catch (e) {
-                console.error(e);
-            }
-        }),
-        add: (filename, watcher) => {
-            console.log(Log_1.color.blue(`【Add File】-> ${filename}`));
-            watcher.add(filename);
-        },
-        unlink: (filename, watcher) => {
-            console.log(Log_1.color.blue(`【Unlink File】-> ${filename}`));
-            watcher.unwatch(filename);
-        },
-        unlinkDir: (filename, watcher) => {
-            console.log(Log_1.color.blue(`【Unlink Dir】-> ${filename}`));
-            watcher.unwatch(filename);
-        },
-        ready: () => { },
-    });
-};
+const utility_1 = require("../utils/utility");
 const resetDir = (dirRoot) => {
     return new Promise((resolve) => {
         if (fs_1.default.existsSync(dirRoot)) {
@@ -123,7 +91,7 @@ const server = () => __awaiter(void 0, void 0, void 0, function* () {
     catch (e) {
         throw e;
     }
-    watchSources({
+    (0, utility_1.watchSources)({
         js: config.js,
         endpoints: config.endpoints,
         root: config.root,

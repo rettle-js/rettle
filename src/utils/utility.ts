@@ -4,6 +4,44 @@ import { getIgnores } from "./config";
 import glob from "glob";
 import { RettleConfigInterface } from "./config";
 import { deleteDir } from "./directoryControl";
+import { watchFiles } from "../module/watcher";
+import { color } from "./Log";
+import { createCacheAppFile, outputFormatFiles } from "./AppScriptBuilder";
+
+export const watchSources = (c: {
+  js: RettleConfigInterface<any>["js"];
+  endpoints: RettleConfigInterface<any>["endpoints"];
+  root: RettleConfigInterface<any>["root"];
+}) => {
+  watchFiles({
+    change: async (filename) => {
+      try {
+        console.log(color.blue(`【Change File】-> ${filename}`));
+        await outputFormatFiles(filename);
+        await createCacheAppFile({
+          js: c.js,
+          endpoints: c.endpoints,
+          root: c.root,
+        });
+      } catch (e) {
+        console.error(e);
+      }
+    },
+    add: (filename, watcher) => {
+      console.log(color.blue(`【Add File】-> ${filename}`));
+      watcher.add(filename);
+    },
+    unlink: (filename, watcher) => {
+      console.log(color.blue(`【Unlink File】-> ${filename}`));
+      watcher.unwatch(filename);
+    },
+    unlinkDir: (filename, watcher) => {
+      console.log(color.blue(`【Unlink Dir】-> ${filename}`));
+      watcher.unwatch(filename);
+    },
+    ready: () => {},
+  });
+};
 
 export const resetDir = (dirRoot: string) => {
   return new Promise((resolve) => {

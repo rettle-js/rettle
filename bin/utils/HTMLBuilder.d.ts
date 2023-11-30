@@ -38,6 +38,7 @@ export declare const transformReact2HTMLCSSDynamic: (path: string, id: string, c
     html: string;
     ids: Array<string>;
     css: string;
+    helmet: HelmetType;
 }>;
 export declare const createHeaderTags: (tagName: string, contents: Record<string, string | number | boolean>[]) => string[];
 export declare const createHeaders: (version: RettleConfigInterface<any>["version"], header: RettleConfigInterface<any>["header"]) => string[];

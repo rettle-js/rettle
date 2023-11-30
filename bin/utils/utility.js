@@ -22,16 +22,60 @@ var __importStar = (this && this.__importStar) || function (mod) {
     __setModuleDefault(result, mod);
     return result;
 };
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.checkEndpoint = exports.getFilesName = exports.getEntryPaths = exports.createHash = exports.mkdirp = exports.resetDir = void 0;
+exports.checkEndpoint = exports.getFilesName = exports.getEntryPaths = exports.createHash = exports.mkdirp = exports.resetDir = exports.watchSources = void 0;
 const path = __importStar(require("path"));
 const fs_1 = __importDefault(require("fs"));
 const config_1 = require("./config");
 const glob_1 = __importDefault(require("glob"));
 const directoryControl_1 = require("./directoryControl");
+const watcher_1 = require("../module/watcher");
+const Log_1 = require("./Log");
+const AppScriptBuilder_1 = require("./AppScriptBuilder");
+const watchSources = (c) => {
+    (0, watcher_1.watchFiles)({
+        change: (filename) => __awaiter(void 0, void 0, void 0, function* () {
+            try {
+                console.log(Log_1.color.blue(`【Change File】-> ${filename}`));
+                yield (0, AppScriptBuilder_1.outputFormatFiles)(filename);
+                yield (0, AppScriptBuilder_1.createCacheAppFile)({
+                    js: c.js,
+                    endpoints: c.endpoints,
+                    root: c.root,
+                });
+            }
+            catch (e) {
+                console.error(e);
+            }
+        }),
+        add: (filename, watcher) => {
+            console.log(Log_1.color.blue(`【Add File】-> ${filename}`));
+            watcher.add(filename);
+        },
+        unlink: (filename, watcher) => {
+            console.log(Log_1.color.blue(`【Unlink File】-> ${filename}`));
+            watcher.unwatch(filename);
+        },
+        unlinkDir: (filename, watcher) => {
+            console.log(Log_1.color.blue(`【Unlink Dir】-> ${filename}`));
+            watcher.unwatch(filename);
+        },
+        ready: () => { },
+    });
+};
+exports.watchSources = watchSources;
 const resetDir = (dirRoot) => {
     return new Promise((resolve) => {
         if (fs_1.default.existsSync(dirRoot)) {

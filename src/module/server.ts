@@ -1,51 +1,15 @@
-import { watchFiles } from "./watcher";
-import { color } from "../utils/Log";
 import {
   createCacheAppFile,
   createTsConfigFile,
   outputFormatFiles,
 } from "../utils/AppScriptBuilder";
 import { wakeupViteServer } from "../utils/viteServer";
-import { createConfig, RettleConfigInterface } from "../utils/config";
+import { createConfig } from "../utils/config";
 import * as path from "path";
 import glob from "glob";
 import fs from "fs";
 import { deleteDir } from "../utils/directoryControl";
-
-const watchSources = (c: {
-  js: RettleConfigInterface<any>["js"];
-  endpoints: RettleConfigInterface<any>["endpoints"];
-  root: RettleConfigInterface<any>["root"];
-}) => {
-  watchFiles({
-    change: async (filename) => {
-      try {
-        console.log(color.blue(`【Change File】-> ${filename}`));
-        await outputFormatFiles(filename);
-        await createCacheAppFile({
-          js: c.js,
-          endpoints: c.endpoints,
-          root: c.root,
-        });
-      } catch (e) {
-        console.error(e);
-      }
-    },
-    add: (filename, watcher) => {
-      console.log(color.blue(`【Add File】-> ${filename}`));
-      watcher.add(filename);
-    },
-    unlink: (filename, watcher) => {
-      console.log(color.blue(`【Unlink File】-> ${filename}`));
-      watcher.unwatch(filename);
-    },
-    unlinkDir: (filename, watcher) => {
-      console.log(color.blue(`【Unlink Dir】-> ${filename}`));
-      watcher.unwatch(filename);
-    },
-    ready: () => {},
-  });
-};
+import { watchSources } from "../utils/utility";
 
 const resetDir = (dirRoot: string) => {
   return new Promise((resolve) => {

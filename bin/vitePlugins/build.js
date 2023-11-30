@@ -80,7 +80,7 @@ const viteRettlePluginBuild = (option) => {
                     yield (0, AppScriptBuilder_1.createCacheAppFile)({
                         js: defaultConfigure_1.defaultConfig.js,
                         endpoints: defaultConfigure_1.defaultConfig.endpoints,
-                        root: path.join(userConfig.root || defaultConfigure_1.defaultConfig.root, option.routes),
+                        root: path.join(userConfig.root || "/", option.routes),
                     });
                 }
                 catch (e) {
@@ -150,12 +150,12 @@ const viteRettlePluginBuild = (option) => {
                     });
                     const jsResolvePath = path.dirname(path.resolve(path.join("./.cache/scripts", defaultConfigure_1.defaultConfig.js)));
                     const jsPath = {
-                        root: path.relative(path.resolve(userConfig.root || "/"), jsResolvePath),
+                        root: jsResolvePath.replace(path.resolve("./"), ""),
                         name: "app.js",
                     };
                     const cssResolvePath = path.resolve(path.join("./.cache/style", item.relativePath));
                     const cssPath = {
-                        root: path.relative(path.resolve(userConfig.root || "/"), cssResolvePath),
+                        root: cssResolvePath.replace(path.resolve("./"), ""),
                         name: "app.css",
                     };
                     const { htmlOutputPath, code, style } = yield (0, HTMLBuilder_1.compileHTML)(item.path, compileData, {
@@ -181,7 +181,6 @@ const viteRettlePluginBuild = (option) => {
                         recursive: true,
                     });
                     fs.writeFileSync(stylePath, style, "utf8");
-                    console.log(code);
                     if (typeof code === "string") {
                         return code;
                     }
@@ -190,7 +189,7 @@ const viteRettlePluginBuild = (option) => {
                     }
                 }
                 catch (e) {
-                    console.log("えらー", e);
+                    console.log("Error: ", e);
                 }
             }
         }),

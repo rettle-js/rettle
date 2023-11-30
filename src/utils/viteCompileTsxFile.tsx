@@ -24,13 +24,18 @@ const compileTsx = (
 ): Promise<string> => {
   return new Promise(async (resolve, reject) => {
     try {
-      const { html, css, ids } = await transformReact2HTMLCSS(tsxPath, {
+      const {
+        html,
+        css,
+        ids,
+        helmet: helmets,
+      } = await transformReact2HTMLCSS(tsxPath, {
         esbuild: c.esbuild,
         define: c.define,
         beautify: c.beautify,
       });
       const style = `<style data-emotion="${ids.join(" ")}">${css}</style>`;
-      const helmet = createHelmet();
+      const helmet = createHelmet(helmets);
       const headers = createHeaders(c.version, c.header).concat(helmet.headers);
       const endpoint = checkEndpoint(tsxPath, c.endpoints, c.root);
       const script = path.join("/.cache/scripts", endpoint || "", c.js);
@@ -67,7 +72,7 @@ const compileDynamicTsx = (
 ): Promise<string> => {
   return new Promise(async (resolve, reject) => {
     try {
-      const { html, css, ids } = await transformReact2HTMLCSSDynamic(
+      const { html, css, ids, helmet } = await transformReact2HTMLCSSDynamic(
         tsxPath,
         id,
         {
@@ -77,8 +82,10 @@ const compileDynamicTsx = (
         }
       );
       const style = `<style data-emotion="${ids.join(" ")}">${css}</style>`;
-      const helmet = createHelmet();
-      const headers = createHeaders(c.version, c.header).concat(helmet.headers);
+      const helmets = createHelmet(helmet);
+      const headers = createHeaders(c.version, c.header).concat(
+        helmets.headers
+      );
       const endpoint = checkEndpoint(tsxPath, c.endpoints, c.root);
       const script = path.join("/.cache/scripts", endpoint || "", c.js);
       const result = c.template({
@@ -86,8 +93,8 @@ const compileDynamicTsx = (
         style,
         headers,
         script,
-        helmet: helmet.attributes,
-        noScript: helmet.body,
+        helmet: helmets.attributes,
+        noScript: helmets.body,
         isModule: true,
       });
       resolve(result);

@@ -60,8 +60,8 @@ const getMadgeLeaves = (target, config) => __awaiter(void 0, void 0, void 0, fun
 });
 exports.getMadgeLeaves = getMadgeLeaves;
 const getDependencies = (targetDir, ignore) => __awaiter(void 0, void 0, void 0, function* () {
-    const targets = glob_1.default.sync(path.join(targetDir, "/**/*"), {
-        ignore: ["node_modules/**/*", ...ignore],
+    const targets = glob_1.default.sync(path.join("./", targetDir, "/**/*"), {
+        ignore: ignore,
         nodir: true,
     });
     const dependenciesFiles = [];

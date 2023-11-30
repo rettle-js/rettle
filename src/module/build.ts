@@ -129,13 +129,13 @@ export const build = async () => {
                     }
                   );
                   const { htmlOutputPath, code, style } = await compileHTML(
-                    key,
                     item,
                     compileData,
                     {
                       js: path.join("/", config.root, config.pathPrefix),
                       css: path.join("/", config.root, config.pathPrefix),
                     },
+                    compileData.helmet,
                     {
                       root: config.root,
                       pathPrefix: config.pathPrefix,
@@ -167,13 +167,13 @@ export const build = async () => {
             beautify: config.beautify,
           });
           const { htmlOutputPath, code, style } = await compileHTML(
-            key,
             item,
             compileData,
             {
               js: path.join("/", config.root, config.pathPrefix),
               css: path.join("/", config.root, config.pathPrefix),
             },
+            compileData.helmet,
             {
               root: config.root,
               pathPrefix: config.pathPrefix,

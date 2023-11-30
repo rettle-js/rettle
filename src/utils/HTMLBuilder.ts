@@ -153,7 +153,12 @@ export const transformReact2HTMLCSSDynamic = (
     esbuild: RettleConfigInterface<any>["esbuild"];
     beautify: RettleConfigInterface<any>["beautify"];
   }
-): Promise<{ html: string; ids: Array<string>; css: string }> => {
+): Promise<{
+  html: string;
+  ids: Array<string>;
+  css: string;
+  helmet: HelmetType;
+}> => {
   return new Promise(async (resolve, reject) => {
     esBuild
       .build({
@@ -182,14 +187,19 @@ export const transformReact2HTMLCSSDynamic = (
             Buffer: buffer.Buffer,
           };
           vm.runInNewContext(code, context);
-          const dynamicRouteFunction = context.module.exports.default as (
+          const createHelmet = context.exports.onHelmet as (
+            id: string
+          ) => HelmetType;
+          const dynamicRouteFunction = context.exports.default as (
             id: string
           ) => {
             html: string;
             ids: Array<string>;
             css: string;
+            helmet: HelmetType;
           };
           const result = dynamicRouteFunction(id);
+          result.helmet = createHelmet(id);
           const HTML = insertCommentOut(result.html, c.beautify);
           if (process.env.NODE_ENV !== "server" && c.beautify.html) {
             result.html =
@@ -333,9 +343,7 @@ export const compileHTML = async (
 ) => {
   try {
     let style = "";
-    console.log(helmets);
     const helmet = createHelmet(helmets);
-    console.log("helmet: ", helmet);
     const headers = createHeaders(c.version, c.header).concat(helmet.headers);
     const script = path.join(assetsRoots.js, c.js);
     headers.push(

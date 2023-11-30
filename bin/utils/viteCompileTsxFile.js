@@ -19,13 +19,13 @@ const path_1 = __importDefault(require("path"));
 const compileTsx = (tsxPath, c) => {
     return new Promise((resolve, reject) => __awaiter(void 0, void 0, void 0, function* () {
         try {
-            const { html, css, ids } = yield (0, HTMLBuilder_1.transformReact2HTMLCSS)(tsxPath, {
+            const { html, css, ids, helmet: helmets, } = yield (0, HTMLBuilder_1.transformReact2HTMLCSS)(tsxPath, {
                 esbuild: c.esbuild,
                 define: c.define,
                 beautify: c.beautify,
             });
             const style = `<style data-emotion="${ids.join(" ")}">${css}</style>`;
-            const helmet = (0, HTMLBuilder_1.createHelmet)();
+            const helmet = (0, HTMLBuilder_1.createHelmet)(helmets);
             const headers = (0, HTMLBuilder_1.createHeaders)(c.version, c.header).concat(helmet.headers);
             const endpoint = (0, utility_1.checkEndpoint)(tsxPath, c.endpoints, c.root);
             const script = path_1.default.join("/.cache/scripts", endpoint || "", c.js);
@@ -49,14 +49,14 @@ exports.compileTsx = compileTsx;
 const compileDynamicTsx = (tsxPath, id, c) => {
     return new Promise((resolve, reject) => __awaiter(void 0, void 0, void 0, function* () {
         try {
-            const { html, css, ids } = yield (0, HTMLBuilder_1.transformReact2HTMLCSSDynamic)(tsxPath, id, {
+            const { html, css, ids, helmet } = yield (0, HTMLBuilder_1.transformReact2HTMLCSSDynamic)(tsxPath, id, {
                 define: c.define,
                 esbuild: c.esbuild,
                 beautify: c.beautify,
             });
             const style = `<style data-emotion="${ids.join(" ")}">${css}</style>`;
-            const helmet = (0, HTMLBuilder_1.createHelmet)();
-            const headers = (0, HTMLBuilder_1.createHeaders)(c.version, c.header).concat(helmet.headers);
+            const helmets = (0, HTMLBuilder_1.createHelmet)(helmet);
+            const headers = (0, HTMLBuilder_1.createHeaders)(c.version, c.header).concat(helmets.headers);
             const endpoint = (0, utility_1.checkEndpoint)(tsxPath, c.endpoints, c.root);
             const script = path_1.default.join("/.cache/scripts", endpoint || "", c.js);
             const result = c.template({
@@ -64,8 +64,8 @@ const compileDynamicTsx = (tsxPath, id, c) => {
                 style,
                 headers,
                 script,
-                helmet: helmet.attributes,
-                noScript: helmet.body,
+                helmet: helmets.attributes,
+                noScript: helmets.body,
                 isModule: true,
             });
             resolve(result);

@@ -84,10 +84,7 @@ const transformReact2HTMLCSS = (targetPath, c) => {
             write: false,
             external: Object.keys(dependencies || []),
             plugins: c.esbuild.plugins("server"),
-            define: {
-                "process.env": JSON.stringify(process.env),
-                define: JSON.stringify(c.define),
-            },
+            define: Object.assign({ "process.env": JSON.stringify(process.env) }, c.define),
         })
             .then((res) => {
             try {
@@ -148,10 +145,7 @@ const transformReact2HTMLCSSDynamic = (path, id, c) => {
             write: false,
             external: Object.keys(dependencies),
             plugins: c.esbuild.plugins("server"),
-            define: {
-                "process.env": JSON.stringify(process.env),
-                define: JSON.stringify(c.define),
-            },
+            define: Object.assign({ "process.env": JSON.stringify(process.env) }, c.define),
         })
             .then((res) => {
             try {
@@ -167,8 +161,10 @@ const transformReact2HTMLCSSDynamic = (path, id, c) => {
                     Buffer: buffer.Buffer,
                 };
                 node_vm_1.default.runInNewContext(code, context);
-                const dynamicRouteFunction = context.module.exports.default;
+                const createHelmet = context.exports.onHelmet;
+                const dynamicRouteFunction = context.exports.default;
                 const result = dynamicRouteFunction(id);
+                result.helmet = createHelmet(id);
                 const HTML = insertCommentOut(result.html, c.beautify);
                 if (process.env.NODE_ENV !== "server" && c.beautify.html) {
                     result.html =
@@ -273,9 +269,7 @@ exports.createHelmet = createHelmet;
 const compileHTML = (file, codes, assetsRoots, helmets, c, options = {}) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         let style = "";
-        console.log(helmets);
         const helmet = (0, exports.createHelmet)(helmets);
-        console.log("helmet: ", helmet);
         const headers = (0, exports.createHeaders)(c.version, c.header).concat(helmet.headers);
         const script = path.join(assetsRoots.js, c.js);
         headers.push(`<link rel="stylesheet" href="${path.join(assetsRoots.css, c.css)}">`);

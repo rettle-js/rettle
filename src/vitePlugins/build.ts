@@ -142,20 +142,14 @@ const viteRettlePluginBuild = (option: RettleOptions): Plugin => {
             path.resolve(path.join("./.cache/scripts", defaultConfig.js))
           );
           const jsPath = {
-            root: path.relative(
-              path.resolve(userConfig.root || "/"),
-              jsResolvePath
-            ),
+            root: jsResolvePath.replace(path.resolve("./"), ""),
             name: "app.js",
           };
           const cssResolvePath = path.resolve(
             path.join("./.cache/style", item.relativePath)
           );
           const cssPath = {
-            root: path.relative(
-              path.resolve(userConfig.root || "/"),
-              cssResolvePath
-            ),
+            root: cssResolvePath.replace(path.resolve("./"), ""),
             name: "app.css",
           };
           const { htmlOutputPath, code, style } = await compileHTML(
@@ -194,7 +188,7 @@ const viteRettlePluginBuild = (option: RettleOptions): Plugin => {
             return code.toString();
           }
         } catch (e) {
-          console.log("えらー", e);
+          console.log("Error: ", e);
         }
       }
     },
