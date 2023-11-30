@@ -7,7 +7,7 @@ import {
   createTsConfigFile,
   outputFormatFiles,
 } from "../utils/AppScriptBuilder";
-import { getEntryPaths, mkdirp } from "../utils/utility";
+import { getEntryPaths, mkdirp, resetDir } from "../utils/utility";
 import {
   transformReact2HTMLCSS,
   transformReact2HTMLCSSDynamic,
@@ -16,16 +16,7 @@ import {
 import { deleteDir, copyStatic } from "../utils/directoryControl";
 import js_beautify from "js-beautify";
 import CleanCSS from "clean-css";
-import {createConfig, RettleConfigInterface} from "../utils/config";
-
-const resetDir = (dirRoot: string) => {
-  return new Promise((resolve) => {
-    if (fs.existsSync(dirRoot)) {
-      deleteDir(dirRoot);
-    }
-    resolve(null);
-  });
-};
+import { createConfig, RettleConfigInterface } from "../utils/config";
 
 export const build = async () => {
   const config = createConfig();
@@ -72,7 +63,7 @@ export const build = async () => {
   try {
     await buildScript(buildSetupOptions, {
       js: config.js,
-      define: config.define
+      define: config.define,
     });
   } catch (e) {
     throw e;
@@ -134,13 +125,17 @@ export const build = async () => {
                     {
                       define: config.define,
                       esbuild: config.esbuild,
-                      beautify: config.beautify
+                      beautify: config.beautify,
                     }
                   );
                   const { htmlOutputPath, code, style } = await compileHTML(
                     key,
                     item,
                     compileData,
+                    {
+                      js: path.join("/", config.root, config.pathPrefix),
+                      css: path.join("/", config.root, config.pathPrefix),
+                    },
                     {
                       root: config.root,
                       pathPrefix: config.pathPrefix,
@@ -151,7 +146,10 @@ export const build = async () => {
                       header: config.header,
                       outDir: config.outDir,
                       esbuild: config.esbuild,
-                      build: config.build
+                      build: config.build,
+                    },
+                    {
+                      module: false,
                     }
                   );
                   styles = styles + style;
@@ -172,6 +170,10 @@ export const build = async () => {
             key,
             item,
             compileData,
+            {
+              js: path.join("/", config.root, config.pathPrefix),
+              css: path.join("/", config.root, config.pathPrefix),
+            },
             {
               root: config.root,
               pathPrefix: config.pathPrefix,
@@ -213,10 +215,6 @@ export const build = async () => {
     await mkdirp(cssOutputPath);
     fs.writeFileSync(cssOutputPath, resultCss, "utf-8");
   });
-  await copyStatic(
-    config.static,
-    config.outDir,
-    config.pathPrefix
-  );
+  await copyStatic(config.static, config.outDir, config.pathPrefix);
   config.build.copyStatic!();
 };

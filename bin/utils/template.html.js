@@ -12,10 +12,9 @@ ${options.style ? options.style : ""}
 <body ${options.helmet.body}>
 ${options.noScript ? options.noScript.join("\n") : ""}
 ${options.html}
-<script src="${options.script}" ${options.mode === "server" ? 'type="module"' : ""}></script>
+<script src="${options.script}" ${options.isModule ? 'type="module"' : ""}></script>
 </body>
 </html>
   `;
 };
 exports.templateHtml = templateHtml;
-//# sourceMappingURL=template.html.js.map

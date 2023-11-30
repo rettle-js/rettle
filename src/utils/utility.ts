@@ -3,6 +3,16 @@ import fs from "fs";
 import { getIgnores } from "./config";
 import glob from "glob";
 import { RettleConfigInterface } from "./config";
+import { deleteDir } from "./directoryControl";
+
+export const resetDir = (dirRoot: string) => {
+  return new Promise((resolve) => {
+    if (fs.existsSync(dirRoot)) {
+      deleteDir(dirRoot);
+    }
+    resolve(null);
+  });
+};
 
 export const mkdirp = (filePath: string) => {
   return new Promise((resolve) => {
@@ -41,7 +51,10 @@ export const getEntryPaths = (
   const entryPaths = {} as { [index: string]: string[] };
   endpoints.map((endpoint: any) => {
     const rootEndpoint = path.join(root, endpoint);
-    const ignore = getIgnores(rootEndpoint);
+    const ignore = getIgnores(rootEndpoint, {
+      endpoints: endpoints,
+      root: root,
+    });
     const files = glob.sync(path.join("./", rootEndpoint, "/**/*"), {
       ignore,
       nodir: true,

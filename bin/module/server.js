@@ -45,13 +45,17 @@ const path = __importStar(require("path"));
 const glob_1 = __importDefault(require("glob"));
 const fs_1 = __importDefault(require("fs"));
 const directoryControl_1 = require("../utils/directoryControl");
-const watchSources = () => {
+const watchSources = (c) => {
     (0, watcher_1.watchFiles)({
         change: (filename) => __awaiter(void 0, void 0, void 0, function* () {
             try {
                 console.log(Log_1.color.blue(`【Change File】-> ${filename}`));
                 yield (0, AppScriptBuilder_1.outputFormatFiles)(filename);
-                yield (0, AppScriptBuilder_1.createCacheAppFile)();
+                yield (0, AppScriptBuilder_1.createCacheAppFile)({
+                    js: c.js,
+                    endpoints: c.endpoints,
+                    root: c.root,
+                });
             }
             catch (e) {
                 console.error(e);
@@ -81,6 +85,7 @@ const resetDir = (dirRoot) => {
     });
 };
 const server = () => __awaiter(void 0, void 0, void 0, function* () {
+    const config = (0, config_1.createConfig)();
     yield Promise.all([
         resetDir(".cache/src"),
         resetDir(".cache/scripts"),
@@ -88,7 +93,7 @@ const server = () => __awaiter(void 0, void 0, void 0, function* () {
     ]);
     /* build app.js files */
     const buildSetupOptions = {
-        outDir: path.join(".cache/temporary", config_1.config.pathPrefix),
+        outDir: path.join(".cache/temporary", config.pathPrefix),
     };
     const srcFiles = glob_1.default.sync("./src/**/*{ts,js,tsx,jsx,json}", {
         nodir: true,
@@ -109,14 +114,35 @@ const server = () => __awaiter(void 0, void 0, void 0, function* () {
         throw e;
     }
     try {
-        yield (0, AppScriptBuilder_1.createCacheAppFile)();
+        yield (0, AppScriptBuilder_1.createCacheAppFile)({
+            js: config.js,
+            endpoints: config.endpoints,
+            root: config.root,
+        });
     }
     catch (e) {
         throw e;
     }
-    watchSources();
+    watchSources({
+        js: config.js,
+        endpoints: config.endpoints,
+        root: config.root,
+    });
     /* wake up html and css server */
-    (0, viteServer_1.wakeupViteServer)().then();
+    (0, viteServer_1.wakeupViteServer)({
+        server: config.server,
+        static: config.static,
+        pathPrefix: config.pathPrefix,
+        define: config.define,
+        root: config.root,
+        dynamicRoutes: config.dynamicRoutes,
+        js: config.js,
+        template: config.template,
+        version: config.version,
+        header: config.header,
+        esbuild: config.esbuild,
+        beautify: config.beautify,
+        endpoints: config.endpoints,
+    }).then();
 });
 exports.server = server;
-//# sourceMappingURL=server.js.map

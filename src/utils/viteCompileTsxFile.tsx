@@ -41,7 +41,7 @@ const compileTsx = (
         script,
         helmet: helmet.attributes,
         noScript: helmet.body,
-        mode: "server",
+        isModule: true,
       });
       resolve(result);
     } catch (e) {
@@ -88,7 +88,7 @@ const compileDynamicTsx = (
         script,
         helmet: helmet.attributes,
         noScript: helmet.body,
-        mode: "server",
+        isModule: true,
       });
       resolve(result);
     } catch (e) {

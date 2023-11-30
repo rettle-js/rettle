@@ -23,7 +23,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.config = exports.getIgnores = void 0;
+exports.getIgnores = exports.createConfig = void 0;
 const path = __importStar(require("path"));
 const sortStringsBySlashCount = (strings) => {
     const slashCountMap = new Map();
@@ -38,7 +38,7 @@ const sortStringsBySlashCount = (strings) => {
     });
     return sorted;
 };
-const getConfigure = () => {
+const createConfig = () => {
     const path = require("path");
     const fs = require("fs");
     const { extensions } = require("interpret");
@@ -67,9 +67,10 @@ const getConfigure = () => {
     config.endpoints = sortStringsBySlashCount(config.endpoints);
     return config;
 };
-const getIgnores = (endpoint) => {
-    const ignores = exports.config.endpoints.filter((x, i, self) => {
-        const rootEndpoint = path.join(exports.config.root, self[i]);
+exports.createConfig = createConfig;
+const getIgnores = (endpoint, c) => {
+    const ignores = c.endpoints.filter((x, i, self) => {
+        const rootEndpoint = path.join(c.root, self[i]);
         return (self[i] !== endpoint &&
             !endpoint.includes(rootEndpoint.replace("/**/*", "")));
     });
@@ -78,5 +79,3 @@ const getIgnores = (endpoint) => {
     });
 };
 exports.getIgnores = getIgnores;
-exports.config = getConfigure();
-//# sourceMappingURL=config.js.map

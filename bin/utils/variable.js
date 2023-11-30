@@ -8,4 +8,3 @@ const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
 const { version } = JSON.parse(fs_1.default.readFileSync(path_1.default.join(__dirname, "../../package.json"), "utf-8"));
 exports.version = version;
-//# sourceMappingURL=variable.js.map

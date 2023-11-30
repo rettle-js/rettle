@@ -16,7 +16,7 @@ export type DynamicRoute = {
   [path: `./${string}`]: string[] | DynamicRouteFunction;
 };
 
-interface BuildOptionsInterface {
+export interface BuildOptionsInterface {
   copyStatic?: () => void;
   buildScript?: (outDir: string) => void;
   buildCss?: (code: string, outDir: string) => string | Buffer;

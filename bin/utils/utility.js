@@ -26,11 +26,21 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.checkEndpoint = exports.getFilesName = exports.getEntryPaths = exports.createHash = exports.mkdirp = void 0;
+exports.checkEndpoint = exports.getFilesName = exports.getEntryPaths = exports.createHash = exports.mkdirp = exports.resetDir = void 0;
 const path = __importStar(require("path"));
 const fs_1 = __importDefault(require("fs"));
 const config_1 = require("./config");
 const glob_1 = __importDefault(require("glob"));
+const directoryControl_1 = require("./directoryControl");
+const resetDir = (dirRoot) => {
+    return new Promise((resolve) => {
+        if (fs_1.default.existsSync(dirRoot)) {
+            (0, directoryControl_1.deleteDir)(dirRoot);
+        }
+        resolve(null);
+    });
+};
+exports.resetDir = resetDir;
 const mkdirp = (filePath) => {
     return new Promise((resolve) => {
         const dirPath = path.extname(filePath) !== "" ? path.dirname(filePath) : filePath;
@@ -60,11 +70,14 @@ const createHash = (str) => {
     return fullStr.substring(fullStr.length - 8, fullStr.length);
 };
 exports.createHash = createHash;
-const getEntryPaths = () => {
+const getEntryPaths = (root, endpoints) => {
     const entryPaths = {};
-    config_1.config.endpoints.map((endpoint) => {
-        const rootEndpoint = path.join(config_1.config.root, endpoint);
-        const ignore = (0, config_1.getIgnores)(rootEndpoint);
+    endpoints.map((endpoint) => {
+        const rootEndpoint = path.join(root, endpoint);
+        const ignore = (0, config_1.getIgnores)(rootEndpoint, {
+            endpoints: endpoints,
+            root: root,
+        });
         const files = glob_1.default.sync(path.join("./", rootEndpoint, "/**/*"), {
             ignore,
             nodir: true,
@@ -87,19 +100,18 @@ exports.getFilesName = getFilesName;
 const countSlash = (str) => {
     return (str.match(/\//g) || []).length;
 };
-const checkEndpoint = (file) => {
-    const endpoints = config_1.config.endpoints.sort((a, b) => {
+const checkEndpoint = (file, endpoints, root) => {
+    const endPoint = endpoints.sort((a, b) => {
         return countSlash(a) < countSlash(b) ? 1 : -1;
     });
-    for (const ep of endpoints) {
-        const rootEndpoint = path.join(config_1.config.root, ep);
+    for (const ep of endPoint) {
+        const rootEndpoint = path.join(root, ep);
         const absPath = path.resolve(rootEndpoint);
         const absFilePath = path.isAbsolute(file) ? file : path.resolve(file);
         if (absFilePath.includes(absPath)) {
-            const fp = absPath.replace(path.resolve(config_1.config.root), "");
+            const fp = absPath.replace(path.resolve(root), "");
             return fp.endsWith("/") ? fp.slice(0, -1) : fp;
         }
     }
 };
 exports.checkEndpoint = checkEndpoint;
-//# sourceMappingURL=utility.js.map

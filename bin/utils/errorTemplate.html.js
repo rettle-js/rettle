@@ -110,4 +110,3 @@ const errorTemplate = (value) => {
     return `<div class="error">${value}</div>`;
 };
 exports.errorTemplate = errorTemplate;
-//# sourceMappingURL=errorTemplate.html.js.map

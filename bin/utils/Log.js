@@ -17,4 +17,3 @@ exports.color = new Proxy(target, {
         };
     }
 });
-//# sourceMappingURL=Log.js.map

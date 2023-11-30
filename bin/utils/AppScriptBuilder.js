@@ -52,6 +52,7 @@ const utility_2 = require("./utility");
 const deepmerge_1 = __importDefault(require("deepmerge"));
 const is_plain_object_1 = require("is-plain-object");
 const tsc_alias_1 = require("tsc-alias");
+const process = __importStar(require("process"));
 const createTsConfigFile = () => {
     return new Promise((resolve) => {
         if (!fs_1.default.existsSync(path_1.default.resolve(".cache"))) {
@@ -62,9 +63,9 @@ const createTsConfigFile = () => {
     });
 };
 exports.createTsConfigFile = createTsConfigFile;
-const createFileName = (filePath) => {
+const createFileName = (filePath, root) => {
     const relativePath = path_1.default
-        .relative(path_1.default.resolve(config_1.config.root), filePath)
+        .relative(path_1.default.resolve(root), filePath)
         .replace("/**/*", "")
         .replace("**/*", "");
     return relativePath;
@@ -99,15 +100,18 @@ const createComponentDep = (filepath) => __awaiter(void 0, void 0, void 0, funct
 const createScriptHash = (str) => {
     return crypto_1.default.createHash("md5").update(str).digest("hex");
 };
-const createCacheAppFile = () => {
+const createCacheAppFile = (c) => {
     return new Promise((resolve) => __awaiter(void 0, void 0, void 0, function* () {
-        const jsFileName = path_1.default.basename(config_1.config.js).replace(".js", "");
-        const jsBaseDir = path_1.default.dirname(config_1.config.js);
-        for (const endpoint of config_1.config.endpoints) {
-            const rootEndpoint = path_1.default.join(config_1.config.root, endpoint);
-            const ignore = (0, config_1.getIgnores)(rootEndpoint);
+        const jsFileName = path_1.default.basename(c.js).replace(".js", "");
+        const jsBaseDir = path_1.default.dirname(c.js);
+        for (const endpoint of c.endpoints) {
+            const rootEndpoint = path_1.default.join(c.root, endpoint);
+            const ignore = (0, config_1.getIgnores)(rootEndpoint, {
+                endpoints: c.endpoints,
+                root: c.root,
+            });
             const files = yield (0, Dependencies_1.getDependencies)(rootEndpoint, ignore);
-            const appResolvePath = createFileName(rootEndpoint);
+            const appResolvePath = createFileName(rootEndpoint, c.root);
             const appFilePath = path_1.default.join(".cache/scripts", appResolvePath, jsBaseDir, `${jsFileName}.js`);
             const appImports = [`import {RettleStart} from "rettle/core";`];
             const scriptObject = [];
@@ -134,7 +138,7 @@ const createCacheAppFile = () => {
     }));
 };
 exports.createCacheAppFile = createCacheAppFile;
-const buildScript = ({ outDir }) => {
+const buildScript = ({ outDir }, c) => {
     return new Promise((resolve) => {
         const files = glob_1.default.sync(path_1.default.resolve("./.cache/scripts/**/*.js"), {
             nodir: true,
@@ -145,15 +149,14 @@ const buildScript = ({ outDir }) => {
             // all cache scripts
             entryPoints: files,
             // If only one file is used, the directory structure is not reproduced, so separate the files.
-            outdir: files.length <= 1
-                ? path_1.default.join(outDir, path_1.default.dirname(config_1.config.js))
-                : outDir,
+            outdir: files.length <= 1 ? path_1.default.join(outDir, path_1.default.dirname(c.js)) : outDir,
             sourcemap: process.env.NODE_ENV !== "production",
             platform: "browser",
             target: "es6",
             tsconfig: ".cache/tsconfig.json",
             define: {
-                "process.env": JSON.stringify(config_1.config.define),
+                "process.env": JSON.stringify(process.env),
+                define: JSON.stringify(c.define),
             },
             minify: true,
         })
@@ -163,7 +166,7 @@ const buildScript = ({ outDir }) => {
     });
 };
 exports.buildScript = buildScript;
-const watchScript = ({ outDir }) => {
+const watchScript = ({ outDir }, c) => {
     return new Promise((resolve) => {
         const files = glob_1.default.sync(path_1.default.resolve("./.cache/scripts/**/*.js"), {
             nodir: true,
@@ -178,17 +181,16 @@ const watchScript = ({ outDir }) => {
                 },
             },
             entryPoints: files,
-            outdir: files.length <= 1
-                ? path_1.default.join(outDir, path_1.default.dirname(config_1.config.js))
-                : outDir,
+            outdir: files.length <= 1 ? path_1.default.join(outDir, path_1.default.dirname(c.js)) : outDir,
             sourcemap: process.env.NODE_ENV !== "production",
             platform: "browser",
             target: "es6",
             tsconfig: ".cache/tsconfig.json",
             define: {
-                "process.env": JSON.stringify(config_1.config.define),
+                "process.env": JSON.stringify(process.env),
+                define: JSON.stringify(c.define),
             },
-            plugins: config_1.config.esbuild.plugins("client"),
+            plugins: c.esbuild.plugins("client"),
         })
             .then(() => {
             resolve(null);
@@ -351,4 +353,3 @@ const outputFormatFiles = (file) => {
     }));
 };
 exports.outputFormatFiles = outputFormatFiles;
-//# sourceMappingURL=AppScriptBuilder.js.map
