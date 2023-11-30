@@ -6,9 +6,6 @@ import { createClient } from "rettle/core";
 const Hoge = (props: any) => {
   return (
     <Component.div frame={"[fr]"} css={css({ fontSize: "32px" })}>
-      <Helmet>
-        <meta charSet={"utf-8"} />
-      </Helmet>
       RESULT {props.text}
     </Component.div>
   );
@@ -28,6 +25,12 @@ export default createDynamicRoute((id) => {
   } as { [index: string]: any };
   return data[id];
 }, Hoge);
+
+export const onHelmet = (id: string) => {
+  return {
+    title: id,
+  };
+};
 
 export const client = createClient(() => {
   console.log("Dynamic");

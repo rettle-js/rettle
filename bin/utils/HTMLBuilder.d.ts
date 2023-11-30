@@ -3,21 +3,20 @@
 import { RettleConfigInterface } from "./config";
 import * as buffer from "buffer";
 interface HelmetType {
-    title: string;
-    bodyAttributes: string;
-    htmlAttributes: string;
-    meta: {
+    title?: string;
+    bodyAttributes?: string;
+    htmlAttributes?: string;
+    meta?: {
         [index: string]: string;
     }[];
-    script: {
+    script?: {
         [index: string]: string;
     }[];
-    link: {
+    link?: {
         [index: string]: string;
     }[];
-    noscript: {
-        [index: string]: string;
-        innerText: string;
+    noscript?: {
+        [index: "innerText" | string]: string;
     }[];
 }
 export declare const transformReact2HTMLCSS: (targetPath: string, c: {

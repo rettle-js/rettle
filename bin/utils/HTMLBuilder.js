@@ -164,7 +164,12 @@ const transformReact2HTMLCSSDynamic = (path, id, c) => {
                 const createHelmet = context.exports.onHelmet;
                 const dynamicRouteFunction = context.exports.default;
                 const result = dynamicRouteFunction(id);
-                result.helmet = createHelmet(id);
+                if (createHelmet) {
+                    result.helmet = createHelmet(id);
+                }
+                else {
+                    result.helmet = {};
+                }
                 const HTML = insertCommentOut(result.html, c.beautify);
                 if (process.env.NODE_ENV !== "server" && c.beautify.html) {
                     result.html =
@@ -220,6 +225,7 @@ const createHeaders = (version, header) => {
 };
 exports.createHeaders = createHeaders;
 const createHelmet = (helmet) => {
+    var _a, _b;
     const title = "title";
     const heads = ["link", "meta", "script"];
     const attributes = ["bodyAttributes", "htmlAttributes"];
@@ -232,35 +238,37 @@ const createHelmet = (helmet) => {
         },
         body: [],
     };
-    if (title in helmet) {
-        results.headers.push(`<title>${helmet[title]}</title>`);
-    }
-    for (const opts of heads) {
-        if (helmet[opts]) {
-            helmet[opts].map((item) => {
-                let tag = Object.keys(item)
-                    .map((t) => {
-                    return `${t}="${item[t]}"`;
-                })
-                    .join(" ");
-                results.headers.push(`<${opts} ${tag} />`);
-            });
+    if (helmet) {
+        if (helmet.title) {
+            results.headers.push(`<title>${helmet[title]}</title>`);
         }
-    }
-    results.attributes.body = helmet.bodyAttributes || "";
-    results.attributes.html = helmet.htmlAttributes || "";
-    for (const opts of body) {
-        if (helmet[opts]) {
-            helmet[opts].map((item) => {
-                let tag = Object.keys(item)
-                    .map((t) => {
-                    if (t !== "innerText") {
+        for (const opts of heads) {
+            if (helmet[opts]) {
+                (_a = helmet[opts]) === null || _a === void 0 ? void 0 : _a.map((item) => {
+                    let tag = Object.keys(item)
+                        .map((t) => {
                         return `${t}="${item[t]}"`;
-                    }
-                })
-                    .join(" ");
-                results.body.push(`<${opts} ${tag}>${item.innerText || ""}</${opts}>`);
-            });
+                    })
+                        .join(" ");
+                    results.headers.push(`<${opts} ${tag} />`);
+                });
+            }
+        }
+        results.attributes.body = helmet.bodyAttributes || "";
+        results.attributes.html = helmet.htmlAttributes || "";
+        for (const opts of body) {
+            if (helmet[opts]) {
+                (_b = helmet[opts]) === null || _b === void 0 ? void 0 : _b.map((item) => {
+                    let tag = Object.keys(item)
+                        .map((t) => {
+                        if (t !== "innerText") {
+                            return `${t}="${item[t]}"`;
+                        }
+                    })
+                        .join(" ");
+                    results.body.push(`<${opts} ${tag}>${item.innerText || ""}</${opts}>`);
+                });
+            }
         }
     }
     return results;

@@ -3,7 +3,6 @@ import vm from "node:vm";
 import fs from "fs";
 import * as path from "path";
 import { RettleConfigInterface } from "./config";
-import Helmet from "react-helmet";
 import { parse } from "node-html-parser";
 import js_beautify from "js-beautify";
 import { mkdirp } from "./utility";
@@ -12,15 +11,14 @@ import * as buffer from "buffer";
 import { Module } from "module";
 
 interface HelmetType {
-  title: string;
-  bodyAttributes: string;
-  htmlAttributes: string;
-  meta: { [index: string]: string }[];
-  script: { [index: string]: string }[];
-  link: { [index: string]: string }[];
-  noscript: {
-    [index: string]: string;
-    innerText: string;
+  title?: string;
+  bodyAttributes?: string;
+  htmlAttributes?: string;
+  meta?: { [index: string]: string }[];
+  script?: { [index: string]: string }[];
+  link?: { [index: string]: string }[];
+  noscript?: {
+    [index: "innerText" | string]: string;
   }[];
 }
 
@@ -199,7 +197,11 @@ export const transformReact2HTMLCSSDynamic = (
             helmet: HelmetType;
           };
           const result = dynamicRouteFunction(id);
-          result.helmet = createHelmet(id);
+          if (createHelmet) {
+            result.helmet = createHelmet(id);
+          } else {
+            result.helmet = {};
+          }
           const HTML = insertCommentOut(result.html, c.beautify);
           if (process.env.NODE_ENV !== "server" && c.beautify.html) {
             result.html =
@@ -281,35 +283,39 @@ export const createHelmet = (helmet: HelmetType) => {
     },
     body: [],
   };
-  if (title in helmet) {
-    results.headers.push(`<title>${helmet[title]}</title>`);
-  }
-  for (const opts of heads) {
-    if (helmet[opts]) {
-      helmet[opts].map((item) => {
-        let tag = Object.keys(item)
-          .map((t) => {
-            return `${t}="${item[t]}"`;
-          })
-          .join(" ");
-        results.headers.push(`<${opts} ${tag} />`);
-      });
+  if (helmet) {
+    if (helmet.title) {
+      results.headers.push(`<title>${helmet[title]}</title>`);
     }
-  }
-  results.attributes.body = helmet.bodyAttributes || "";
-  results.attributes.html = helmet.htmlAttributes || "";
-  for (const opts of body) {
-    if (helmet[opts]) {
-      helmet[opts].map((item) => {
-        let tag = Object.keys(item)
-          .map((t) => {
-            if (t !== "innerText") {
+    for (const opts of heads) {
+      if (helmet[opts]) {
+        helmet[opts]?.map((item) => {
+          let tag = Object.keys(item)
+            .map((t) => {
               return `${t}="${item[t]}"`;
-            }
-          })
-          .join(" ");
-        results.body.push(`<${opts} ${tag}>${item.innerText || ""}</${opts}>`);
-      });
+            })
+            .join(" ");
+          results.headers.push(`<${opts} ${tag} />`);
+        });
+      }
+    }
+    results.attributes.body = helmet.bodyAttributes || "";
+    results.attributes.html = helmet.htmlAttributes || "";
+    for (const opts of body) {
+      if (helmet[opts]) {
+        helmet[opts]?.map((item) => {
+          let tag = Object.keys(item)
+            .map((t) => {
+              if (t !== "innerText") {
+                return `${t}="${item[t]}"`;
+              }
+            })
+            .join(" ");
+          results.body.push(
+            `<${opts} ${tag}>${item.innerText || ""}</${opts}>`
+          );
+        });
+      }
     }
   }
   return results;

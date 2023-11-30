@@ -74,6 +74,10 @@ const App = () => {
   );
 };
 
+export const onHelmet = {
+  title: "index",
+};
+
 export const client = createClient(({ getRef }) => {
   const counterNode = getRef("counter");
   const count = useReactive(0);
