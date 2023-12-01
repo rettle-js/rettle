@@ -45,7 +45,7 @@ const watcher_1 = require("../module/watcher");
 const Log_1 = require("./Log");
 const AppScriptBuilder_1 = require("./AppScriptBuilder");
 const watchSources = (c) => {
-    (0, watcher_1.watchFiles)({
+    const watcher = (0, watcher_1.watchFiles)({
         change: (filename) => __awaiter(void 0, void 0, void 0, function* () {
             try {
                 console.log(Log_1.color.blue(`【Change File】-> ${filename}`));
@@ -60,20 +60,19 @@ const watchSources = (c) => {
                 console.error(e);
             }
         }),
-        add: (filename, watcher) => {
+        add: (filename, watcher) => __awaiter(void 0, void 0, void 0, function* () {
             console.log(Log_1.color.blue(`【Add File】-> ${filename}`));
             watcher.add(filename);
-        },
-        unlink: (filename, watcher) => {
-            console.log(Log_1.color.blue(`【Unlink File】-> ${filename}`));
-            watcher.unwatch(filename);
-        },
-        unlinkDir: (filename, watcher) => {
-            console.log(Log_1.color.blue(`【Unlink Dir】-> ${filename}`));
-            watcher.unwatch(filename);
-        },
+            yield (0, AppScriptBuilder_1.outputFormatFiles)(filename);
+            yield (0, AppScriptBuilder_1.createCacheAppFile)({
+                js: c.js,
+                endpoints: c.endpoints,
+                root: c.root,
+            });
+        }),
         ready: () => { },
     });
+    return watcher;
 };
 exports.watchSources = watchSources;
 const resetDir = (dirRoot) => {

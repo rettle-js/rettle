@@ -14,9 +14,8 @@ export const watchFiles = (args: watchFileArgs) => {
 
   const watcher = Chokidar.watch(srcAllFilesPath, {
     persistent: true,
-    awaitWriteFinish: {
-      stabilityThreshold: 1000,
-    },
+    awaitWriteFinish: true,
+    usePolling: true,
   });
   watcher.on("ready", () => {
     if (args.ready) {
@@ -32,6 +31,11 @@ export const watchFiles = (args: watchFileArgs) => {
         args.add(filename, watcher);
       }
     });
+    watcher.on("addDir", (filename, status) => {
+      if (args.add) {
+        args.add(filename, watcher);
+      }
+    });
     watcher.on("unlink", (filename) => {
       if (args.unlink) {
         args.unlink(filename, watcher);
@@ -43,4 +47,5 @@ export const watchFiles = (args: watchFileArgs) => {
       }
     });
   });
+  return watcher;
 };

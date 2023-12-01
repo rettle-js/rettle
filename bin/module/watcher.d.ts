@@ -6,5 +6,5 @@ interface watchFileArgs {
     unlink?: (filename: string, watcher: Chokidar.FSWatcher) => void;
     unlinkDir?: (filename: string, watcher: Chokidar.FSWatcher) => void;
 }
-export declare const watchFiles: (args: watchFileArgs) => void;
+export declare const watchFiles: (args: watchFileArgs) => Chokidar.FSWatcher;
 export {};

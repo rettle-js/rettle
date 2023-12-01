@@ -3,7 +3,7 @@ export declare const watchSources: (c: {
     js: RettleConfigInterface<any>["js"];
     endpoints: RettleConfigInterface<any>["endpoints"];
     root: RettleConfigInterface<any>["root"];
-}) => void;
+}) => import("chokidar").FSWatcher;
 export declare const resetDir: (dirRoot: string) => Promise<unknown>;
 export declare const mkdirp: (filePath: string) => Promise<unknown>;
 export declare const createHash: (str: string) => string;
