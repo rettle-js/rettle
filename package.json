@@ -1,6 +1,6 @@
 {
   "name": "rettle",
-  "version": "0.0.8-beta3.5",
+  "version": "0.0.8-beta3.6",
   "main": "./bin/rettle.js",
   "bin": {
     "rettle": "./bin/index.js"
