@@ -2,6 +2,7 @@
 /// <reference types="node" />
 import { RettleConfigInterface } from "./config";
 import * as buffer from "buffer";
+import { version } from "./variable";
 interface HelmetType {
     title?: string;
     bodyAttributes?: string;
@@ -40,7 +41,7 @@ export declare const transformReact2HTMLCSSDynamic: (path: string, id: string, c
     helmet: HelmetType;
 }>;
 export declare const createHeaderTags: (tagName: string, contents: Record<string, string | number | boolean>[]) => string[];
-export declare const createHeaders: (version: RettleConfigInterface<any>["version"], header: RettleConfigInterface<any>["header"]) => string[];
+export declare const createHeaders: (isVersion: RettleConfigInterface<any>["version"], header: RettleConfigInterface<any>["header"]) => string[];
 interface RettleHelmetType {
     headers: string[];
     attributes: {

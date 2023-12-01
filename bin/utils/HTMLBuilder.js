@@ -46,6 +46,7 @@ const utility_1 = require("./utility");
 const html_minifier_terser_1 = require("html-minifier-terser");
 const buffer = __importStar(require("buffer"));
 const module_1 = require("module");
+const variable_1 = require("./variable");
 const { dependencies } = JSON.parse(fs_1.default.readFileSync(path.resolve("./package.json"), "utf-8")) || {};
 const insertCommentOut = (code, beautify) => {
     const root = (0, node_html_parser_1.parse)(code);
@@ -206,9 +207,9 @@ const createHeaderTags = (tagName, contents) => {
     });
 };
 exports.createHeaderTags = createHeaderTags;
-const createHeaders = (version, header) => {
-    const versionMeta = version
-        ? [`<meta name="generator" content="Rettle ${version}">`]
+const createHeaders = (isVersion, header) => {
+    const versionMeta = isVersion
+        ? [`<meta name="generator" content="Rettle ${variable_1.version}">`]
         : [""];
     const headerMeta = header
         ? header.meta
