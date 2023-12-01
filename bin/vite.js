@@ -14,6 +14,7 @@ const defaultOptions = {
     version: defaultConfigure_1.defaultConfig.version,
     routes: "views",
     buildHook: defaultConfigure_1.defaultConfig.build,
+    hotReload: true,
 };
 exports.default = (options = {}) => {
     const option = (0, deepmerge_1.default)(defaultOptions, options);

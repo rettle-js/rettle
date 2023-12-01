@@ -12,10 +12,12 @@ const viteRettlePluginServer = (option: RettleOptions): Plugin => {
     name: "vite-plugin-rettle",
     apply: "serve",
     handleHotUpdate(context) {
-      context.server.ws.send({
-        type: "full-reload",
-      });
-      return [];
+      if (!context.file.includes(".cache") && option.hotReload) {
+        context.server.ws.send({
+          type: "full-reload",
+        });
+        return [];
+      }
     },
     config: async (config) => {
       userConfig = config;

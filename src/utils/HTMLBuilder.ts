@@ -9,6 +9,7 @@ import { mkdirp } from "./utility";
 import { minify } from "html-minifier-terser";
 import * as buffer from "buffer";
 import { Module } from "module";
+import { version } from "./variable";
 
 interface HelmetType {
   title?: string;
@@ -243,10 +244,10 @@ export const createHeaderTags = (
 };
 
 export const createHeaders = (
-  version: RettleConfigInterface<any>["version"],
+  isVersion: RettleConfigInterface<any>["version"],
   header: RettleConfigInterface<any>["header"]
 ) => {
-  const versionMeta = version
+  const versionMeta = isVersion
     ? [`<meta name="generator" content="Rettle ${version}">`]
     : [""];
   const headerMeta = header
