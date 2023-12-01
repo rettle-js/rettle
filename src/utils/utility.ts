@@ -13,7 +13,7 @@ export const watchSources = (c: {
   endpoints: RettleConfigInterface<any>["endpoints"];
   root: RettleConfigInterface<any>["root"];
 }) => {
-  watchFiles({
+  const watcher = watchFiles({
     change: async (filename) => {
       try {
         console.log(color.blue(`【Change File】-> ${filename}`));
@@ -27,20 +27,19 @@ export const watchSources = (c: {
         console.error(e);
       }
     },
-    add: (filename, watcher) => {
+    add: async (filename, watcher) => {
       console.log(color.blue(`【Add File】-> ${filename}`));
       watcher.add(filename);
-    },
-    unlink: (filename, watcher) => {
-      console.log(color.blue(`【Unlink File】-> ${filename}`));
-      watcher.unwatch(filename);
-    },
-    unlinkDir: (filename, watcher) => {
-      console.log(color.blue(`【Unlink Dir】-> ${filename}`));
-      watcher.unwatch(filename);
+      await outputFormatFiles(filename);
+      await createCacheAppFile({
+        js: c.js,
+        endpoints: c.endpoints,
+        root: c.root,
+      });
     },
     ready: () => {},
   });
+  return watcher;
 };
 
 export const resetDir = (dirRoot: string) => {

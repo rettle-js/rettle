@@ -115,8 +115,7 @@ const createCacheAppFile = (c) => {
             const appFilePath = path_1.default.join(".cache/scripts", appResolvePath, jsBaseDir, `${jsFileName}.js`);
             const appImports = [`import {RettleStart} from "rettle/core";`];
             const scriptObject = [];
-            const scriptRunner = [`RettleStart(clients, {})`];
-            const defs = [];
+            const scriptRunner = [`RettleStart(clients)`];
             for (const file of files) {
                 const hash = (0, utility_2.createHash)(path_1.default.resolve(file));
                 const hashName = createScriptHash(file);

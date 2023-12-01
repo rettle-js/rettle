@@ -43,7 +43,7 @@ const errorTemplate_html_1 = __importStar(require("./errorTemplate.html"));
 const viteCompileTsxFile_1 = require("./viteCompileTsxFile");
 const viteDynamicRouting_1 = require("./viteDynamicRouting");
 const errorResult = (e) => {
-    const errorType = String(e);
+    const errorType = String(e).toString();
     const stack = e.stack
         .split("<br/>")
         .map((item, i) => (i !== 0 ? item + "<br/>" : ""))

@@ -115,8 +115,7 @@ export const createCacheAppFile = (c: {
       );
       const appImports = [`import {RettleStart} from "rettle/core";`];
       const scriptObject = [];
-      const scriptRunner = [`RettleStart(clients, {})`];
-      const defs = [];
+      const scriptRunner = [`RettleStart(clients)`];
       for (const file of files) {
         const hash = createHash(path.resolve(file));
         const hashName = createScriptHash(file);

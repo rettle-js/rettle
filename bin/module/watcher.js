@@ -33,9 +33,8 @@ const watchFiles = (args) => {
     const srcAllFilesPath = path.resolve("./src/**/*.{ts,tsx,js,jsx}");
     const watcher = chokidar_1.default.watch(srcAllFilesPath, {
         persistent: true,
-        awaitWriteFinish: {
-            stabilityThreshold: 1000,
-        },
+        awaitWriteFinish: true,
+        usePolling: true,
     });
     watcher.on("ready", () => {
         if (args.ready) {
@@ -51,6 +50,11 @@ const watchFiles = (args) => {
                 args.add(filename, watcher);
             }
         });
+        watcher.on("addDir", (filename, status) => {
+            if (args.add) {
+                args.add(filename, watcher);
+            }
+        });
         watcher.on("unlink", (filename) => {
             if (args.unlink) {
                 args.unlink(filename, watcher);
@@ -62,5 +66,6 @@ const watchFiles = (args) => {
             }
         });
     });
+    return watcher;
 };
 exports.watchFiles = watchFiles;

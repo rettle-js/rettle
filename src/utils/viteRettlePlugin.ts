@@ -12,7 +12,7 @@ import {
 } from "./viteDynamicRouting";
 
 const errorResult = (e: any) => {
-  const errorType = String(e);
+  const errorType = String(e).toString();
   const stack = e.stack
     .split("<br/>")
     .map((item: string, i: number) => (i !== 0 ? item + "<br/>" : ""))

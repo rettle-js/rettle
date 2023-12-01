@@ -28,9 +28,6 @@ export const server = async () => {
     resetDir(".cache/temporary"),
   ]);
   /* build app.js files */
-  const buildSetupOptions = {
-    outDir: path.join(".cache/temporary", config.pathPrefix),
-  };
   const srcFiles = glob.sync("./src/**/*{ts,js,tsx,jsx,json}", {
     nodir: true,
   });

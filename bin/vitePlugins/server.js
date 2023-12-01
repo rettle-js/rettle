@@ -41,27 +41,70 @@ const defaultConfigure_1 = require("../utils/defaultConfigure");
 const path = __importStar(require("node:path"));
 const node_fs_1 = __importDefault(require("node:fs"));
 const viteCompileTsxFile_1 = require("../utils/viteCompileTsxFile");
+const glob_1 = __importDefault(require("glob"));
+const AppScriptBuilder_1 = require("../utils/AppScriptBuilder");
+const errorTemplate_html_1 = __importStar(require("../utils/errorTemplate.html"));
 const viteRettlePluginServer = (option) => {
     let userConfig;
+    let watcher;
     return {
         name: "vite-plugin-rettle",
         apply: "serve",
         handleHotUpdate(context) {
-            if (!context.file.includes(".cache") && option.hotReload) {
-                context.server.ws.send({
-                    type: "full-reload",
-                });
+            if (context.file.includes(".cache") || option.hotReload === false) {
                 return [];
             }
+            context.server.ws.send({
+                type: "full-reload",
+            });
         },
         config: (config) => __awaiter(void 0, void 0, void 0, function* () {
             userConfig = config;
-            (0, utility_1.watchSources)({
+            return userConfig;
+        }),
+        buildStart: () => __awaiter(void 0, void 0, void 0, function* () {
+            yield Promise.all([
+                (0, utility_1.resetDir)(".cache/src"),
+                (0, utility_1.resetDir)(".cache/scripts"),
+                (0, utility_1.resetDir)(".cache/temporary"),
+            ]);
+            const srcFiles = glob_1.default.sync("./src/**/*{ts,js,tsx,jsx,json}", {
+                nodir: true,
+            });
+            yield Promise.all(srcFiles.map((file) => new Promise((resolve, reject) => __awaiter(void 0, void 0, void 0, function* () {
+                try {
+                    yield (0, AppScriptBuilder_1.outputFormatFiles)(file);
+                    resolve(null);
+                }
+                catch (e) {
+                    reject(e);
+                }
+            }))));
+            try {
+                yield (0, AppScriptBuilder_1.createTsConfigFile)();
+            }
+            catch (e) {
+                throw e;
+            }
+            try {
+                yield (0, AppScriptBuilder_1.createCacheAppFile)({
+                    js: defaultConfigure_1.defaultConfig.js,
+                    endpoints: defaultConfigure_1.defaultConfig.endpoints,
+                    root: path.join(userConfig.root || "/", option.routes),
+                });
+            }
+            catch (e) {
+                throw e;
+            }
+            watcher = (0, utility_1.watchSources)({
                 js: defaultConfigure_1.defaultConfig.js,
                 endpoints: defaultConfigure_1.defaultConfig.endpoints,
                 root: path.join(userConfig.root || "/", option.routes),
             });
         }),
+        buildEnd: () => {
+            watcher.close();
+        },
         configureServer: (server) => {
             server.middlewares.use((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
                 const request = path.join(server.config.root, option.routes, req.url || "");
@@ -73,19 +116,24 @@ const viteRettlePluginServer = (option) => {
                     if (!node_fs_1.default.existsSync(tsxPath)) {
                         return next();
                     }
-                    const html = yield (0, viteCompileTsxFile_1.compileTsx)(tsxPath, {
-                        js: defaultConfigure_1.defaultConfig.js,
-                        template: defaultConfigure_1.defaultConfig.template,
-                        version: option.version,
-                        header: defaultConfigure_1.defaultConfig.header,
-                        esbuild: defaultConfigure_1.defaultConfig.esbuild,
-                        define: userConfig.define,
-                        beautify: defaultConfigure_1.defaultConfig.beautify,
-                        endpoints: defaultConfigure_1.defaultConfig.endpoints,
-                        root: path.join(path.join(userConfig.root || ""), option.routes),
-                    });
-                    const result = yield server.transformIndexHtml(fullReqPath, html, userConfig.base);
-                    return (0, vite_1.send)(req, res, result, "html", {});
+                    try {
+                        const html = yield (0, viteCompileTsxFile_1.compileTsx)(tsxPath, {
+                            js: defaultConfigure_1.defaultConfig.js,
+                            template: defaultConfigure_1.defaultConfig.template,
+                            version: option.version,
+                            header: defaultConfigure_1.defaultConfig.header,
+                            esbuild: defaultConfigure_1.defaultConfig.esbuild,
+                            define: userConfig.define,
+                            beautify: defaultConfigure_1.defaultConfig.beautify,
+                            endpoints: defaultConfigure_1.defaultConfig.endpoints,
+                            root: path.join(path.join(userConfig.root || ""), option.routes),
+                        });
+                        const result = yield server.transformIndexHtml(fullReqPath, html, userConfig.base);
+                        return (0, vite_1.send)(req, res, result, "html", {});
+                    }
+                    catch (e) {
+                        return (0, vite_1.send)(req, res, (0, errorTemplate_html_1.default)("Build Error", (0, errorTemplate_html_1.errorTemplate)(`<p class="color-red">${String(e).toString()}</p><p class="pl-20">${e.stack}</p>`)), "html", {});
+                    }
                 }
                 next();
             }));
