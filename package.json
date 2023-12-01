@@ -59,7 +59,7 @@
     "@types/glob": "^8.0.0",
     "@types/html-minifier-terser": "^7.0.0",
     "@types/js-beautify": "^1.13.3",
-    "@types/madge": "^5.0.0",
+    "@types/madge": "^5.0.3",
     "@types/mime-types": "^2.1.1",
     "@types/node": "^18.11.9",
     "@types/react": "^18.0.28",
@@ -69,7 +69,7 @@
     "cross-env": "^7.0.3",
     "prettier": "^2.8.4",
     "react": "^18.2.0",
-    "typescript": "^5.1.6"
+    "typescript": "^4.9.5"
   },
   "dependencies": {
     "@babel/preset-env": "^7.22.10",
@@ -95,7 +95,7 @@
     "interpret": "^3.1.1",
     "is-plain-object": "^5.0.0",
     "js-beautify": "^1.14.7",
-    "madge": "^6.0.0",
+    "madge": "^6.1.0",
     "mime-types": "^2.1.35",
     "node-html-parser": "^6.1.5",
     "react-dom": "^18.2.0",
@@ -104,6 +104,6 @@
     "terser": "^5.19.2",
     "ts-node": "^10.9.1",
     "tsc-alias": "^1.8.2",
-    "vite": "^4.3.9"
+    "vite": "^5.0.4"
   }
 }

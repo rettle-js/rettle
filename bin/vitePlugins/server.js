@@ -47,10 +47,12 @@ const viteRettlePluginServer = (option) => {
         name: "vite-plugin-rettle",
         apply: "serve",
         handleHotUpdate(context) {
-            context.server.ws.send({
-                type: "full-reload",
-            });
-            return [];
+            if (!context.file.includes(".cache") && option.hotReload) {
+                context.server.ws.send({
+                    type: "full-reload",
+                });
+                return [];
+            }
         },
         config: (config) => __awaiter(void 0, void 0, void 0, function* () {
             userConfig = config;

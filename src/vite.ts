@@ -16,6 +16,7 @@ export interface RettleOptions {
   version: boolean;
   routes: string;
   buildHook: BuildOptionsInterface;
+  hotReload?: boolean;
 }
 
 const defaultOptions: RettleOptions = {
@@ -25,6 +26,7 @@ const defaultOptions: RettleOptions = {
   version: defaultConfig.version,
   routes: "views",
   buildHook: defaultConfig.build,
+  hotReload: true,
 };
 
 export default (options: Partial<RettleOptions> = {}): any[] => {
