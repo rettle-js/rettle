@@ -1,6 +1,5 @@
 import { RettleConfigInterface } from "./config";
 import { templateHtml } from "./template.html";
-import * as process from "process";
 import RettlePlugin from "esbuild-plugin-rettle";
 
 const config: RettleConfigInterface = {
@@ -54,9 +53,7 @@ const config: RettleConfigInterface = {
     port: 3000,
     host: "0.0.0.0",
   },
-  define: {
-    NODE_ENV: process.env.NODE_ENV as string,
-  },
+  define: {},
   version: true,
 };
 

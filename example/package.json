@@ -17,13 +17,13 @@
   "dependencies": {
     "@emotion/react": "^11.10.6",
     "react": "^18.2.0",
-    "react-helmet": "^6.1.0",
-    "rettle": "github:ITakayuki/Rettle#versions/0.0.8-beta3.4"
+    "react-helmet": "^6.1.0"
   },
   "devDependencies": {
     "@types/react": "^18.0.28",
     "cross-env": "^7.0.3",
     "esbuild-plugin-rettle": "^0.0.1-beta2",
+    "rettle": "github:rettle-js/rettle#versions/0.0.8-beta3.5",
     "typescript": "^5.1.6"
   }
 }

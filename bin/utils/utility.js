@@ -22,15 +22,69 @@ var __importStar = (this && this.__importStar) || function (mod) {
     __setModuleDefault(result, mod);
     return result;
 };
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.checkEndpoint = exports.getFilesName = exports.getEntryPaths = exports.createHash = exports.mkdirp = void 0;
+exports.checkEndpoint = exports.getFilesName = exports.getEntryPaths = exports.createHash = exports.mkdirp = exports.resetDir = exports.watchSources = void 0;
 const path = __importStar(require("path"));
 const fs_1 = __importDefault(require("fs"));
 const config_1 = require("./config");
 const glob_1 = __importDefault(require("glob"));
+const directoryControl_1 = require("./directoryControl");
+const watcher_1 = require("../module/watcher");
+const Log_1 = require("./Log");
+const AppScriptBuilder_1 = require("./AppScriptBuilder");
+const watchSources = (c) => {
+    (0, watcher_1.watchFiles)({
+        change: (filename) => __awaiter(void 0, void 0, void 0, function* () {
+            try {
+                console.log(Log_1.color.blue(`【Change File】-> ${filename}`));
+                yield (0, AppScriptBuilder_1.outputFormatFiles)(filename);
+                yield (0, AppScriptBuilder_1.createCacheAppFile)({
+                    js: c.js,
+                    endpoints: c.endpoints,
+                    root: c.root,
+                });
+            }
+            catch (e) {
+                console.error(e);
+            }
+        }),
+        add: (filename, watcher) => {
+            console.log(Log_1.color.blue(`【Add File】-> ${filename}`));
+            watcher.add(filename);
+        },
+        unlink: (filename, watcher) => {
+            console.log(Log_1.color.blue(`【Unlink File】-> ${filename}`));
+            watcher.unwatch(filename);
+        },
+        unlinkDir: (filename, watcher) => {
+            console.log(Log_1.color.blue(`【Unlink Dir】-> ${filename}`));
+            watcher.unwatch(filename);
+        },
+        ready: () => { },
+    });
+};
+exports.watchSources = watchSources;
+const resetDir = (dirRoot) => {
+    return new Promise((resolve) => {
+        if (fs_1.default.existsSync(dirRoot)) {
+            (0, directoryControl_1.deleteDir)(dirRoot);
+        }
+        resolve(null);
+    });
+};
+exports.resetDir = resetDir;
 const mkdirp = (filePath) => {
     return new Promise((resolve) => {
         const dirPath = path.extname(filePath) !== "" ? path.dirname(filePath) : filePath;
@@ -60,11 +114,14 @@ const createHash = (str) => {
     return fullStr.substring(fullStr.length - 8, fullStr.length);
 };
 exports.createHash = createHash;
-const getEntryPaths = () => {
+const getEntryPaths = (root, endpoints) => {
     const entryPaths = {};
-    config_1.config.endpoints.map((endpoint) => {
-        const rootEndpoint = path.join(config_1.config.root, endpoint);
-        const ignore = (0, config_1.getIgnores)(rootEndpoint);
+    endpoints.map((endpoint) => {
+        const rootEndpoint = path.join(root, endpoint);
+        const ignore = (0, config_1.getIgnores)(rootEndpoint, {
+            endpoints: endpoints,
+            root: root,
+        });
         const files = glob_1.default.sync(path.join("./", rootEndpoint, "/**/*"), {
             ignore,
             nodir: true,
@@ -87,19 +144,18 @@ exports.getFilesName = getFilesName;
 const countSlash = (str) => {
     return (str.match(/\//g) || []).length;
 };
-const checkEndpoint = (file) => {
-    const endpoints = config_1.config.endpoints.sort((a, b) => {
+const checkEndpoint = (file, endpoints, root) => {
+    const endPoint = endpoints.sort((a, b) => {
         return countSlash(a) < countSlash(b) ? 1 : -1;
     });
-    for (const ep of endpoints) {
-        const rootEndpoint = path.join(config_1.config.root, ep);
+    for (const ep of endPoint) {
+        const rootEndpoint = path.join(root, ep);
         const absPath = path.resolve(rootEndpoint);
         const absFilePath = path.isAbsolute(file) ? file : path.resolve(file);
         if (absFilePath.includes(absPath)) {
-            const fp = absPath.replace(path.resolve(config_1.config.root), "");
+            const fp = absPath.replace(path.resolve(root), "");
             return fp.endsWith("/") ? fp.slice(0, -1) : fp;
         }
     }
 };
 exports.checkEndpoint = checkEndpoint;
-//# sourceMappingURL=utility.js.map

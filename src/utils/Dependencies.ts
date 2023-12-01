@@ -35,7 +35,7 @@ export const getDependencies = async (
   targetDir: string,
   ignore: Array<string>
 ) => {
-  const targets = glob.sync(path.join(targetDir, "/**/*"), {
+  const targets = glob.sync(path.join("./", targetDir, "/**/*"), {
     ignore: ignore,
     nodir: true,
   });

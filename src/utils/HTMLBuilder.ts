@@ -1,21 +1,34 @@
 import * as esBuild from "esbuild";
-import vm from "vm";
+import vm from "node:vm";
 import fs from "fs";
 import * as path from "path";
-import { config } from "./config";
-import { version } from "./variable";
-import Helmet from "react-helmet";
+import { RettleConfigInterface } from "./config";
 import { parse } from "node-html-parser";
 import js_beautify from "js-beautify";
 import { mkdirp } from "./utility";
 import { minify } from "html-minifier-terser";
 import * as buffer from "buffer";
+import { Module } from "module";
 
-const { dependencies } = JSON.parse(
-  fs.readFileSync(path.resolve("./package.json"), "utf-8")
-);
+interface HelmetType {
+  title?: string;
+  bodyAttributes?: string;
+  htmlAttributes?: string;
+  meta?: { [index: string]: string }[];
+  script?: { [index: string]: string }[];
+  link?: { [index: string]: string }[];
+  noscript?: {
+    [index: "innerText" | string]: string;
+  }[];
+}
 
-const insertCommentOut = (code: string) => {
+const { dependencies } =
+  JSON.parse(fs.readFileSync(path.resolve("./package.json"), "utf-8")) || {};
+
+const insertCommentOut = (
+  code: string,
+  beautify: RettleConfigInterface<any>["beautify"]
+) => {
   const root = parse(code);
   let HTML = root.toString();
   const articles = root.querySelectorAll("[data-comment-out]");
@@ -36,12 +49,10 @@ const insertCommentOut = (code: string) => {
     if (article.childNodes.length !== 0)
       htmlArr.push(
         `<!--- ${
-          config.beautify.html
+          beautify.html
             ? js_beautify.html(
                 children,
-                typeof config.beautify.html === "boolean"
-                  ? {}
-                  : config.beautify.html
+                typeof beautify.html === "boolean" ? {} : beautify.html
               )
             : children
         } --->`
@@ -53,45 +64,65 @@ const insertCommentOut = (code: string) => {
 };
 
 export const transformReact2HTMLCSS = (
-  path: string
-): Promise<{ html: string; ids: Array<string>; css: string }> => {
+  targetPath: string,
+  c: {
+    esbuild: RettleConfigInterface<any>["esbuild"];
+    define: RettleConfigInterface<any>["define"];
+    beautify: RettleConfigInterface<any>["beautify"];
+  }
+): Promise<{
+  html: string;
+  ids: Array<string>;
+  css: string;
+  helmet: HelmetType;
+}> => {
   return new Promise(async (resolve, reject) => {
     esBuild
       .build({
         bundle: true,
-        entryPoints: [path],
+        entryPoints: [targetPath],
         platform: "node",
         write: false,
-        external: Object.keys(dependencies),
-        plugins: config.esbuild.plugins!("server"),
+        external: Object.keys(dependencies || []),
+        plugins: c.esbuild.plugins!("server"),
         define: {
-          "process.env": JSON.stringify(config.define),
+          "process.env": JSON.stringify(process.env),
+          ...c.define,
         },
       })
       .then((res) => {
         try {
           const code = res.outputFiles![0].text;
-          const context = {
+          const mod = new Module(targetPath);
+          mod.filename = targetPath;
+          mod.loaded = true;
+          const context = vm.createContext({
             exports,
-            module,
+            module: mod,
             process,
+            console,
             require,
             __filename,
             __dirname,
-            Buffer: buffer.Buffer,
-          };
-          vm.runInNewContext(code, context);
-          const result = context.module.exports.default as {
+            Buffer,
+            global,
+            window: global,
+          });
+          vm.runInContext(code, context);
+          const helmet = context.exports.onHelmet as HelmetType;
+          const result = context.exports.default as {
             html: string;
-            ids: Array<string>;
+            ids: string[];
             css: string;
+            helmet: HelmetType;
           };
-          const HTML = insertCommentOut(result.html);
-          if (process.env.NODE_ENV !== "server" && config.beautify.html) {
+          result.helmet = helmet;
+          const HTML = insertCommentOut(result.html, c.beautify);
+          if (process.env.NODE_ENV !== "server" && c.beautify.html) {
             result.html =
-              typeof config.beautify.html === "boolean"
+              typeof c.beautify.html === "boolean"
                 ? js_beautify.html(HTML, {})
-                : js_beautify.html(HTML, config.beautify.html);
+                : js_beautify.html(HTML, c.beautify.html);
           } else {
             result.html = HTML;
           }
@@ -114,8 +145,18 @@ export const transformReact2HTMLCSS = (
 
 export const transformReact2HTMLCSSDynamic = (
   path: string,
-  id: string
-): Promise<{ html: string; ids: Array<string>; css: string }> => {
+  id: string,
+  c: {
+    define: RettleConfigInterface<any>["define"];
+    esbuild: RettleConfigInterface<any>["esbuild"];
+    beautify: RettleConfigInterface<any>["beautify"];
+  }
+): Promise<{
+  html: string;
+  ids: Array<string>;
+  css: string;
+  helmet: HelmetType;
+}> => {
   return new Promise(async (resolve, reject) => {
     esBuild
       .build({
@@ -124,9 +165,10 @@ export const transformReact2HTMLCSSDynamic = (
         platform: "node",
         write: false,
         external: Object.keys(dependencies),
-        plugins: config.esbuild.plugins!("server"),
+        plugins: c.esbuild.plugins!("server"),
         define: {
-          "process.env": JSON.stringify(config.define),
+          "process.env": JSON.stringify(process.env),
+          ...c.define,
         },
       })
       .then((res) => {
@@ -136,26 +178,36 @@ export const transformReact2HTMLCSSDynamic = (
             exports,
             module,
             process,
+            console,
             require,
             __filename,
             __dirname,
             Buffer: buffer.Buffer,
           };
           vm.runInNewContext(code, context);
-          const dynamicRouteFunction = context.module.exports.default as (
+          const createHelmet = context.exports.onHelmet as (
+            id: string
+          ) => HelmetType;
+          const dynamicRouteFunction = context.exports.default as (
             id: string
           ) => {
             html: string;
             ids: Array<string>;
             css: string;
+            helmet: HelmetType;
           };
           const result = dynamicRouteFunction(id);
-          const HTML = insertCommentOut(result.html);
-          if (process.env.NODE_ENV !== "server" && config.beautify.html) {
+          if (createHelmet) {
+            result.helmet = createHelmet(id);
+          } else {
+            result.helmet = {};
+          }
+          const HTML = insertCommentOut(result.html, c.beautify);
+          if (process.env.NODE_ENV !== "server" && c.beautify.html) {
             result.html =
-              typeof config.beautify.html === "boolean"
+              typeof c.beautify.html === "boolean"
                 ? js_beautify.html(HTML, {})
-                : js_beautify.html(HTML, config.beautify.html);
+                : js_beautify.html(HTML, c.beautify.html);
           } else {
             result.html = HTML;
           }
@@ -190,20 +242,23 @@ export const createHeaderTags = (
   });
 };
 
-export const createHeaders = () => {
-  const versionMeta = config.version
+export const createHeaders = (
+  version: RettleConfigInterface<any>["version"],
+  header: RettleConfigInterface<any>["header"]
+) => {
+  const versionMeta = version
     ? [`<meta name="generator" content="Rettle ${version}">`]
     : [""];
-  const headerMeta = config.header
-    ? config.header.meta
-      ? createHeaderTags("meta", config.header.meta)
+  const headerMeta = header
+    ? header.meta
+      ? createHeaderTags("meta", header.meta)
       : [""]
     : [""];
-  const headerLink = config.header?.link
-    ? createHeaderTags("link", config.header?.link)
+  const headerLink = header?.link
+    ? createHeaderTags("link", header?.link)
     : [""];
-  const headerScript = config.header?.script
-    ? createHeaderTags("script", config.header?.script)
+  const headerScript = header?.script
+    ? createHeaderTags("script", header?.script)
     : [""];
   return [...versionMeta, ...headerMeta, ...headerLink, ...headerScript];
 };
@@ -215,9 +270,9 @@ interface RettleHelmetType {
   };
   body: string[];
 }
-export const createHelmet = () => {
-  const helmet = Helmet.renderStatic();
-  const heads = ["title", "base", "link", "meta", "script", "style"] as const;
+export const createHelmet = (helmet: HelmetType) => {
+  const title = "title";
+  const heads = ["link", "meta", "script"] as const;
   const attributes = ["bodyAttributes", "htmlAttributes"] as const;
   const body = ["noscript"] as const;
   const results: RettleHelmetType = {
@@ -228,64 +283,107 @@ export const createHelmet = () => {
     },
     body: [],
   };
-  for (const opts of heads) {
-    const opt = opts as (typeof heads)[number];
-    if (helmet[opt]) {
-      results.headers.push(helmet[opt].toString());
+  if (helmet) {
+    if (helmet.title) {
+      results.headers.push(`<title>${helmet[title]}</title>`);
     }
-  }
-  results.attributes.body = helmet.bodyAttributes.toString() || "";
-  results.attributes.html = helmet.htmlAttributes.toString() || "";
-  for (const opts of body) {
-    const opt = opts as (typeof heads)[number];
-    if (helmet[opt]) {
-      results.body.push(helmet[opt].toString());
+    for (const opts of heads) {
+      if (helmet[opts]) {
+        helmet[opts]?.map((item) => {
+          let tag = Object.keys(item)
+            .map((t) => {
+              return `${t}="${item[t]}"`;
+            })
+            .join(" ");
+          results.headers.push(`<${opts} ${tag} />`);
+        });
+      }
+    }
+    results.attributes.body = helmet.bodyAttributes || "";
+    results.attributes.html = helmet.htmlAttributes || "";
+    for (const opts of body) {
+      if (helmet[opts]) {
+        helmet[opts]?.map((item) => {
+          let tag = Object.keys(item)
+            .map((t) => {
+              if (t !== "innerText") {
+                return `${t}="${item[t]}"`;
+              }
+            })
+            .join(" ");
+          results.body.push(
+            `<${opts} ${tag}>${item.innerText || ""}</${opts}>`
+          );
+        });
+      }
     }
   }
   return results;
 };
 
 export const compileHTML = async (
-  key: string,
   file: string,
   codes: { html: string; css: string; ids: string[] },
-  dynamic?: string
+  assetsRoots: {
+    js: string;
+    css: string;
+  },
+  helmets: HelmetType,
+  c: {
+    root: RettleConfigInterface<any>["root"];
+    pathPrefix: RettleConfigInterface<any>["pathPrefix"];
+    js: RettleConfigInterface<any>["js"];
+    css: RettleConfigInterface<any>["css"];
+    template: RettleConfigInterface<any>["template"];
+    version: RettleConfigInterface<any>["version"];
+    header: RettleConfigInterface<any>["header"];
+    outDir: RettleConfigInterface<any>["outDir"];
+    esbuild: RettleConfigInterface<any>["esbuild"];
+    build: RettleConfigInterface<any>["build"];
+  },
+  options: {
+    dynamic?: string;
+    noDir?: boolean;
+    module?: boolean;
+  } = {}
 ) => {
   try {
     let style = "";
-    const helmet = createHelmet();
-    const headers = createHeaders().concat(helmet.headers);
-    const root = key.replace(config.root, config.pathPrefix);
-    const script = path.join("/", root, config.js);
+    const helmet = createHelmet(helmets);
+    const headers = createHeaders(c.version, c.header).concat(helmet.headers);
+    const script = path.join(assetsRoots.js, c.js);
     headers.push(
-      `<link rel="stylesheet" href="${path.join("/", root, config.css)}">`
+      `<link rel="stylesheet" href="${path.join(assetsRoots.css, c.css)}">`
     );
-    const markup = config.template({
+    const markup = c.template({
       html: codes.html,
       headers,
       script,
       helmet: helmet.attributes,
       noScript: helmet.body,
+      isModule: options.module || false,
     });
     style = style + codes.css;
     const exName = path.extname(file);
     let htmlOutputPath = path
-      .join(config.outDir, config.pathPrefix, file.replace(config.root, ""))
+      .join(c.outDir, c.pathPrefix, file.replace(c.root, ""))
       .replace(exName, ".html");
-    if (dynamic) {
+    if (options.dynamic) {
       const pattern = /\[(.*?)\]/;
       const result = htmlOutputPath.match(pattern);
       htmlOutputPath = result
-        ? htmlOutputPath.replace(`[${result[1]}]`, dynamic)
+        ? htmlOutputPath.replace(`[${result[1]}]`, options.dynamic)
         : htmlOutputPath;
     }
-    await mkdirp(htmlOutputPath);
+    if (!options.noDir) {
+      await mkdirp(htmlOutputPath);
+    }
     const minifyHtml = await minify(markup, {
       collapseInlineTagWhitespace: true,
       collapseWhitespace: true,
       preserveLineBreaks: true,
     });
-    const code = config.build.buildHTML!(minifyHtml, htmlOutputPath);
+    const code = c.build.buildHTML!(minifyHtml, htmlOutputPath);
     return Promise.resolve({ code, htmlOutputPath, style });
   } catch (e) {
     return Promise.reject(e);

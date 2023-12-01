@@ -36,8 +36,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.server = void 0;
-const watcher_1 = require("./watcher");
-const Log_1 = require("../utils/Log");
 const AppScriptBuilder_1 = require("../utils/AppScriptBuilder");
 const viteServer_1 = require("../utils/viteServer");
 const config_1 = require("../utils/config");
@@ -45,33 +43,7 @@ const path = __importStar(require("path"));
 const glob_1 = __importDefault(require("glob"));
 const fs_1 = __importDefault(require("fs"));
 const directoryControl_1 = require("../utils/directoryControl");
-const watchSources = () => {
-    (0, watcher_1.watchFiles)({
-        change: (filename) => __awaiter(void 0, void 0, void 0, function* () {
-            try {
-                console.log(Log_1.color.blue(`【Change File】-> ${filename}`));
-                yield (0, AppScriptBuilder_1.outputFormatFiles)(filename);
-                yield (0, AppScriptBuilder_1.createCacheAppFile)();
-            }
-            catch (e) {
-                console.error(e);
-            }
-        }),
-        add: (filename, watcher) => {
-            console.log(Log_1.color.blue(`【Add File】-> ${filename}`));
-            watcher.add(filename);
-        },
-        unlink: (filename, watcher) => {
-            console.log(Log_1.color.blue(`【Unlink File】-> ${filename}`));
-            watcher.unwatch(filename);
-        },
-        unlinkDir: (filename, watcher) => {
-            console.log(Log_1.color.blue(`【Unlink Dir】-> ${filename}`));
-            watcher.unwatch(filename);
-        },
-        ready: () => { },
-    });
-};
+const utility_1 = require("../utils/utility");
 const resetDir = (dirRoot) => {
     return new Promise((resolve) => {
         if (fs_1.default.existsSync(dirRoot)) {
@@ -81,6 +53,7 @@ const resetDir = (dirRoot) => {
     });
 };
 const server = () => __awaiter(void 0, void 0, void 0, function* () {
+    const config = (0, config_1.createConfig)();
     yield Promise.all([
         resetDir(".cache/src"),
         resetDir(".cache/scripts"),
@@ -88,7 +61,7 @@ const server = () => __awaiter(void 0, void 0, void 0, function* () {
     ]);
     /* build app.js files */
     const buildSetupOptions = {
-        outDir: path.join(".cache/temporary", config_1.config.pathPrefix),
+        outDir: path.join(".cache/temporary", config.pathPrefix),
     };
     const srcFiles = glob_1.default.sync("./src/**/*{ts,js,tsx,jsx,json}", {
         nodir: true,
@@ -109,14 +82,35 @@ const server = () => __awaiter(void 0, void 0, void 0, function* () {
         throw e;
     }
     try {
-        yield (0, AppScriptBuilder_1.createCacheAppFile)();
+        yield (0, AppScriptBuilder_1.createCacheAppFile)({
+            js: config.js,
+            endpoints: config.endpoints,
+            root: config.root,
+        });
     }
     catch (e) {
         throw e;
     }
-    watchSources();
+    (0, utility_1.watchSources)({
+        js: config.js,
+        endpoints: config.endpoints,
+        root: config.root,
+    });
     /* wake up html and css server */
-    (0, viteServer_1.wakeupViteServer)().then();
+    (0, viteServer_1.wakeupViteServer)({
+        server: config.server,
+        static: config.static,
+        pathPrefix: config.pathPrefix,
+        define: config.define,
+        root: config.root,
+        dynamicRoutes: config.dynamicRoutes,
+        js: config.js,
+        template: config.template,
+        version: config.version,
+        header: config.header,
+        esbuild: config.esbuild,
+        beautify: config.beautify,
+        endpoints: config.endpoints,
+    }).then();
 });
 exports.server = server;
-//# sourceMappingURL=server.js.map

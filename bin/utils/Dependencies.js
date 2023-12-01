@@ -60,7 +60,7 @@ const getMadgeLeaves = (target, config) => __awaiter(void 0, void 0, void 0, fun
 });
 exports.getMadgeLeaves = getMadgeLeaves;
 const getDependencies = (targetDir, ignore) => __awaiter(void 0, void 0, void 0, function* () {
-    const targets = glob_1.default.sync(path.join(targetDir, "/**/*"), {
+    const targets = glob_1.default.sync(path.join("./", targetDir, "/**/*"), {
         ignore: ignore,
         nodir: true,
     });
@@ -92,4 +92,3 @@ const getDependencies = (targetDir, ignore) => __awaiter(void 0, void 0, void 0,
     });
 });
 exports.getDependencies = getDependencies;
-//# sourceMappingURL=Dependencies.js.map

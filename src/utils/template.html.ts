@@ -11,7 +11,7 @@ export interface templateHTMLInterface
     body: string;
   };
   noScript: string[];
-  mode?: "server" | "build";
+  isModule: boolean;
 }
 
 export const templateHtml = (options: templateHTMLInterface) => {
@@ -26,7 +26,7 @@ ${options.style ? options.style : ""}
 ${options.noScript ? options.noScript.join("\n") : ""}
 ${options.html}
 <script src="${options.script}" ${
-    options.mode === "server" ? 'type="module"' : ""
+    options.isModule ? 'type="module"' : ""
   }></script>
 </body>
 </html>

@@ -1,7 +1,56 @@
 import * as path from "path";
 import fs from "fs";
-import { config, getIgnores } from "./config";
+import { getIgnores } from "./config";
 import glob from "glob";
+import { RettleConfigInterface } from "./config";
+import { deleteDir } from "./directoryControl";
+import { watchFiles } from "../module/watcher";
+import { color } from "./Log";
+import { createCacheAppFile, outputFormatFiles } from "./AppScriptBuilder";
+
+export const watchSources = (c: {
+  js: RettleConfigInterface<any>["js"];
+  endpoints: RettleConfigInterface<any>["endpoints"];
+  root: RettleConfigInterface<any>["root"];
+}) => {
+  watchFiles({
+    change: async (filename) => {
+      try {
+        console.log(color.blue(`【Change File】-> ${filename}`));
+        await outputFormatFiles(filename);
+        await createCacheAppFile({
+          js: c.js,
+          endpoints: c.endpoints,
+          root: c.root,
+        });
+      } catch (e) {
+        console.error(e);
+      }
+    },
+    add: (filename, watcher) => {
+      console.log(color.blue(`【Add File】-> ${filename}`));
+      watcher.add(filename);
+    },
+    unlink: (filename, watcher) => {
+      console.log(color.blue(`【Unlink File】-> ${filename}`));
+      watcher.unwatch(filename);
+    },
+    unlinkDir: (filename, watcher) => {
+      console.log(color.blue(`【Unlink Dir】-> ${filename}`));
+      watcher.unwatch(filename);
+    },
+    ready: () => {},
+  });
+};
+
+export const resetDir = (dirRoot: string) => {
+  return new Promise((resolve) => {
+    if (fs.existsSync(dirRoot)) {
+      deleteDir(dirRoot);
+    }
+    resolve(null);
+  });
+};
 
 export const mkdirp = (filePath: string) => {
   return new Promise((resolve) => {
@@ -33,11 +82,17 @@ export const createHash = (str: string) => {
   return fullStr.substring(fullStr.length - 8, fullStr.length);
 };
 
-export const getEntryPaths = () => {
+export const getEntryPaths = (
+  root: RettleConfigInterface<any>["root"],
+  endpoints: RettleConfigInterface<any>["endpoints"]
+) => {
   const entryPaths = {} as { [index: string]: string[] };
-  config.endpoints.map((endpoint: any) => {
-    const rootEndpoint = path.join(config.root, endpoint);
-    const ignore = getIgnores(rootEndpoint);
+  endpoints.map((endpoint: any) => {
+    const rootEndpoint = path.join(root, endpoint);
+    const ignore = getIgnores(rootEndpoint, {
+      endpoints: endpoints,
+      root: root,
+    });
     const files = glob.sync(path.join("./", rootEndpoint, "/**/*"), {
       ignore,
       nodir: true,
@@ -61,16 +116,20 @@ const countSlash = (str: string) => {
   return (str.match(/\//g) || []).length;
 };
 
-export const checkEndpoint = (file: string) => {
-  const endpoints = config.endpoints.sort((a: string, b: string) => {
+export const checkEndpoint = (
+  file: string,
+  endpoints: RettleConfigInterface<any>["endpoints"],
+  root: RettleConfigInterface<any>["root"]
+) => {
+  const endPoint = endpoints.sort((a: string, b: string) => {
     return countSlash(a) < countSlash(b) ? 1 : -1;
   });
-  for (const ep of endpoints) {
-    const rootEndpoint = path.join(config.root, ep);
+  for (const ep of endPoint) {
+    const rootEndpoint = path.join(root, ep);
     const absPath = path.resolve(rootEndpoint);
     const absFilePath = path.isAbsolute(file) ? file : path.resolve(file);
     if (absFilePath.includes(absPath)) {
-      const fp = absPath.replace(path.resolve(config.root), "");
+      const fp = absPath.replace(path.resolve(root), "");
       return fp.endsWith("/") ? fp.slice(0, -1) : fp;
     }
   }

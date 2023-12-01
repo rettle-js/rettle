@@ -4,7 +4,7 @@ import fs from "fs";
 import crypto from "crypto";
 import tsConfig from "./template-tsconfig.json";
 import { getDependencies, getMadgeObject, checkScript } from "./Dependencies";
-import { config, getIgnores } from "./config";
+import { getIgnores, RettleConfigInterface } from "./config";
 import glob from "glob";
 import { mkdirp } from "./utility";
 import * as acorn from "acorn";
@@ -17,6 +17,7 @@ import {
   prepareSingleFileReplaceTscAliasPaths,
   SingleFileReplacer,
 } from "tsc-alias";
+import * as process from "process";
 
 interface BuildScriptInterface {
   outDir: string;
@@ -36,9 +37,12 @@ export const createTsConfigFile = () => {
   });
 };
 
-const createFileName = (filePath: string) => {
+const createFileName = (
+  filePath: string,
+  root: RettleConfigInterface<any>["root"]
+) => {
   const relativePath = path
-    .relative(path.resolve(config.root), filePath)
+    .relative(path.resolve(root), filePath)
     .replace("/**/*", "")
     .replace("**/*", "");
   return relativePath;
@@ -87,15 +91,22 @@ const createScriptHash = (str: string) => {
   return crypto.createHash("md5").update(str).digest("hex");
 };
 
-export const createCacheAppFile = () => {
+export const createCacheAppFile = (c: {
+  js: RettleConfigInterface<any>["js"];
+  endpoints: RettleConfigInterface<any>["endpoints"];
+  root: RettleConfigInterface<any>["root"];
+}) => {
   return new Promise(async (resolve) => {
-    const jsFileName = path.basename(config.js).replace(".js", "");
-    const jsBaseDir = path.dirname(config.js);
-    for (const endpoint of config.endpoints) {
-      const rootEndpoint = path.join(config.root, endpoint);
-      const ignore = getIgnores(rootEndpoint);
+    const jsFileName = path.basename(c.js).replace(".js", "");
+    const jsBaseDir = path.dirname(c.js);
+    for (const endpoint of c.endpoints) {
+      const rootEndpoint = path.join(c.root, endpoint);
+      const ignore = getIgnores(rootEndpoint, {
+        endpoints: c.endpoints,
+        root: c.root,
+      });
       const files = await getDependencies(rootEndpoint, ignore);
-      const appResolvePath = createFileName(rootEndpoint);
+      const appResolvePath = createFileName(rootEndpoint, c.root);
       const appFilePath = path.join(
         ".cache/scripts",
         appResolvePath,
@@ -134,7 +145,13 @@ export const createCacheAppFile = () => {
   });
 };
 
-export const buildScript = ({ outDir }: BuildScriptInterface) => {
+export const buildScript = (
+  { outDir }: BuildScriptInterface,
+  c: {
+    js: RettleConfigInterface<any>["js"];
+    define: RettleConfigInterface<any>["define"];
+  }
+) => {
   return new Promise((resolve) => {
     const files = glob.sync(path.resolve("./.cache/scripts/**/*.js"), {
       nodir: true,
@@ -146,15 +163,14 @@ export const buildScript = ({ outDir }: BuildScriptInterface) => {
         entryPoints: files,
         // If only one file is used, the directory structure is not reproduced, so separate the files.
         outdir:
-          files.length <= 1
-            ? path.join(outDir, path.dirname(config.js))
-            : outDir,
+          files.length <= 1 ? path.join(outDir, path.dirname(c.js)) : outDir,
         sourcemap: process.env.NODE_ENV !== "production",
         platform: "browser",
         target: "es6",
         tsconfig: ".cache/tsconfig.json",
         define: {
-          "process.env": JSON.stringify(config.define),
+          "process.env": JSON.stringify(process.env),
+          define: JSON.stringify(c.define),
         },
         minify: true,
       })
@@ -164,7 +180,14 @@ export const buildScript = ({ outDir }: BuildScriptInterface) => {
   });
 };
 
-export const watchScript = ({ outDir }: BuildScriptInterface) => {
+export const watchScript = (
+  { outDir }: BuildScriptInterface,
+  c: {
+    js: RettleConfigInterface<any>["js"];
+    define: RettleConfigInterface<any>["define"];
+    esbuild: RettleConfigInterface<any>["esbuild"];
+  }
+) => {
   return new Promise((resolve) => {
     const files = glob.sync(path.resolve("./.cache/scripts/**/*.js"), {
       nodir: true,
@@ -179,17 +202,16 @@ export const watchScript = ({ outDir }: BuildScriptInterface) => {
         },
         entryPoints: files,
         outdir:
-          files.length <= 1
-            ? path.join(outDir, path.dirname(config.js))
-            : outDir,
+          files.length <= 1 ? path.join(outDir, path.dirname(c.js)) : outDir,
         sourcemap: process.env.NODE_ENV !== "production",
         platform: "browser",
         target: "es6",
         tsconfig: ".cache/tsconfig.json",
         define: {
-          "process.env": JSON.stringify(config.define),
+          "process.env": JSON.stringify(process.env),
+          define: JSON.stringify(c.define),
         },
-        plugins: config.esbuild.plugins!("client"),
+        plugins: c.esbuild.plugins!("client"),
       })
       .then(() => {
         resolve(null);

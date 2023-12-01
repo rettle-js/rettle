@@ -37,18 +37,17 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.deleteDir = exports.copyStatic = void 0;
 const fs_1 = __importDefault(require("fs"));
-const config_1 = require("./config");
 const path = __importStar(require("path"));
 const rimraf_1 = require("rimraf");
 const glob_1 = __importDefault(require("glob"));
 const utility_1 = require("./utility");
-const copyStatic = () => __awaiter(void 0, void 0, void 0, function* () {
-    const files = glob_1.default.sync(path.resolve(path.join("./", config_1.config.static, "**/*")), {
-        nodir: true
+const copyStatic = (staticDir, outDir, pathPrefix) => __awaiter(void 0, void 0, void 0, function* () {
+    const files = glob_1.default.sync(path.resolve(path.join("./", staticDir, "**/*")), {
+        nodir: true,
     });
     for (const file of files) {
-        const before = path.join("/", config_1.config.static);
-        const after = path.join("/", config_1.config.outDir, config_1.config.pathPrefix);
+        const before = path.join("/", staticDir);
+        const after = path.join("/", outDir, pathPrefix);
         const outputPath = path.relative("./", file.replace(before, after));
         (0, utility_1.mkdirp)(outputPath).then(() => {
             fs_1.default.copyFileSync(file, outputPath);
@@ -60,4 +59,3 @@ const deleteDir = (root) => {
     (0, rimraf_1.rimrafSync)(root);
 };
 exports.deleteDir = deleteDir;
-//# sourceMappingURL=directoryControl.js.map

@@ -14,46 +14,47 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.viteAdditionalStaticPlugin = void 0;
 const path_1 = __importDefault(require("path"));
-const config_1 = require("./config");
 const fs_1 = __importDefault(require("fs"));
 const vite_1 = require("vite");
 const glob_1 = __importDefault(require("glob"));
 const mime_types_1 = __importDefault(require("mime-types"));
 const addStaticFiles = {};
-if (config_1.config.server.listenDir) {
-    for (const dir of config_1.config.server.listenDir) {
-        const listenFiles = glob_1.default.sync(path_1.default.join(dir, "/**/*"), {
-            nodir: true,
-        });
-        for (const file of listenFiles) {
-            const resolveFile = path_1.default.resolve(file);
-            addStaticFiles[file] = fs_1.default.readFileSync(resolveFile);
-        }
-    }
-}
-exports.viteAdditionalStaticPlugin = {
-    name: "vite-plugin-additional-static",
-    apply: "serve",
-    configureServer(server) {
-        server.middlewares.use((req, res, next) => __awaiter(this, void 0, void 0, function* () {
-            if (req.url && config_1.config.server.listenDir) {
-                const requestURL = req.url.split("?")[0].split("#")[0];
-                for (const dir of config_1.config.server.listenDir) {
-                    const requestFullFilePath = path_1.default.join(path_1.default.resolve(dir), requestURL);
-                    if (addStaticFiles[requestFullFilePath]) {
-                        const type = mime_types_1.default.lookup(requestURL);
-                        return (0, vite_1.send)(req, res, addStaticFiles[requestFullFilePath], "", {
-                            headers: {
-                                "Content-Type": String(type),
-                            },
-                        });
+const viteAdditionalStaticPlugin = (c) => {
+    return {
+        name: "vite-plugin-additional-static",
+        apply: "serve",
+        configureServer(server) {
+            if (c.server.listenDir) {
+                for (const dir of c.server.listenDir) {
+                    const listenFiles = glob_1.default.sync(path_1.default.join(dir, "/**/*"), {
+                        nodir: true,
+                    });
+                    for (const file of listenFiles) {
+                        const resolveFile = path_1.default.resolve(file);
+                        addStaticFiles[file] = fs_1.default.readFileSync(resolveFile);
                     }
                 }
             }
-            else {
-                next();
-            }
-        }));
-    },
+            server.middlewares.use((req, res, next) => __awaiter(this, void 0, void 0, function* () {
+                if (req.url && c.server.listenDir) {
+                    const requestURL = req.url.split("?")[0].split("#")[0];
+                    for (const dir of c.server.listenDir) {
+                        const requestFullFilePath = path_1.default.join(path_1.default.resolve(dir), requestURL);
+                        if (addStaticFiles[requestFullFilePath]) {
+                            const type = mime_types_1.default.lookup(requestURL);
+                            return (0, vite_1.send)(req, res, addStaticFiles[requestFullFilePath], "", {
+                                headers: {
+                                    "Content-Type": String(type),
+                                },
+                            });
+                        }
+                    }
+                }
+                else {
+                    next();
+                }
+            }));
+        },
+    };
 };
-//# sourceMappingURL=viteAdditionalStaticPlugin.js.map
+exports.viteAdditionalStaticPlugin = viteAdditionalStaticPlugin;

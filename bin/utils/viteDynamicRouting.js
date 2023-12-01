@@ -37,16 +37,15 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getWaitingPath = exports.checkDynamicRoute = exports.viteDynamicRouting = void 0;
 const node_path_1 = __importDefault(require("node:path"));
-const config_1 = require("./config");
 const viteCompileTsxFile_1 = require("./viteCompileTsxFile");
 const fs = __importStar(require("node:fs"));
-const getWaitingPath = () => __awaiter(void 0, void 0, void 0, function* () {
+const getWaitingPath = (c) => __awaiter(void 0, void 0, void 0, function* () {
     const waitingData = [];
     const pattern = /\[(.*?)\]/;
-    if (config_1.config.dynamicRoutes) {
-        for (const relativePath of Object.keys(config_1.config.dynamicRoutes)) {
-            const routeIsArray = Array.isArray(config_1.config.dynamicRoutes[relativePath]);
-            const routingSetting = config_1.config.dynamicRoutes[relativePath];
+    if (c.dynamicRoutes) {
+        for (const relativePath of Object.keys(c.dynamicRoutes)) {
+            const routeIsArray = Array.isArray(c.dynamicRoutes[relativePath]);
+            const routingSetting = c.dynamicRoutes[relativePath];
             const requestData = routeIsArray
                 ? routingSetting
                 : (yield routingSetting());
@@ -74,10 +73,10 @@ const checkDynamicRoute = (requestHTML, config) => {
     return false;
 };
 exports.checkDynamicRoute = checkDynamicRoute;
-const viteDynamicRouting = (tsxPath, id) => __awaiter(void 0, void 0, void 0, function* () {
+const viteDynamicRouting = (tsxPath, id, c) => __awaiter(void 0, void 0, void 0, function* () {
     if (fs.existsSync(tsxPath)) {
         try {
-            const result = yield (0, viteCompileTsxFile_1.compileDynamicTsx)(tsxPath, id);
+            const result = yield (0, viteCompileTsxFile_1.compileDynamicTsx)(tsxPath, id, c);
             return yield Promise.resolve(result);
         }
         catch (e) {
@@ -89,4 +88,3 @@ const viteDynamicRouting = (tsxPath, id) => __awaiter(void 0, void 0, void 0, fu
     }
 });
 exports.viteDynamicRouting = viteDynamicRouting;
-//# sourceMappingURL=viteDynamicRouting.js.map
